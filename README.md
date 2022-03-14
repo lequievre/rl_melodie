@@ -12,8 +12,8 @@ melodie.hani_daniel_zakaria@uca.fr
 
 
 
-How to install virtualenv on ubuntu 20.04 :
------------------------------------------
+# How to install virtualenv on ubuntu 20.04
+
 
 virtualenv is a tool to create lightweight “virtual environments” with their own site directories isolated from system site directories.
 Each "virtual environment" has its own Python binary (which matches the version of the binary that was used to create this environment) 
