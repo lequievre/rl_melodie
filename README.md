@@ -13,11 +13,10 @@ Mélodie HANI DANIEL ZAKARIA
 ## How to install virtualenv on ubuntu 20.04
 
 virtualenv is a tool to create lightweight “virtual environments” with their own site directories isolated from system site directories.
-Each "virtual environment" has its own Python binary (which matches the version of the binary that was used to create this environment) 
-and can have its own independent set of installed Python packages in its site directories.
+<br>Each "virtual environment" has its own Python binary (which matches the version of the binary that was used to create this environment) and can have its own independent set of installed Python packages in its site directories.
 
 
-sudo apt install python3-pip
+<br>sudo apt install python3-pip
 <br>pip3 install virtualenv
 
 ## How to create a virtualenv named 've_rl' and activate it
