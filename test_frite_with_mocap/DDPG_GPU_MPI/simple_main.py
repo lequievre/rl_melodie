@@ -89,7 +89,7 @@ def main():
 		
 		keys = p.getKeyboardEvents()
 		env.apply_cartesian_sliders()
-		env.compute_mesh_pos_to_follow(draw_normal=False)
+		env.compute_mesh_pos_to_follow(draw_normal=True)
 		
 		env.draw_cross_mesh_to_follow()
 		env.frame_transform()

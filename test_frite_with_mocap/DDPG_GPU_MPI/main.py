@@ -184,10 +184,10 @@ def main():
             keys = p.getKeyboardEvents()
             
             env.apply_cartesian_sliders()
-            env.draw_gripper_position()
-            env.draw_id_to_follow()
-            env.draw_text_gripper_position()
-            env.draw_text_joints_values()
+            #env.draw_gripper_position()
+            #env.draw_id_to_follow()
+            #env.draw_text_gripper_position()
+            #env.draw_text_joints_values()
             
             
             
