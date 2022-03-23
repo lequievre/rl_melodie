@@ -8,58 +8,87 @@ class Debug_Gui:
 	
 	
 	def draw_text(self, a_name, a_text = "", a_pos = [0,0,0], a_size = 1.5, a_color = [1, 0, 0]):
-		if ( str(a_name) in self.dic_id.keys() ):
-			p.removeUserDebugItem(self.dic_id[str(a_name)])
-		self.dic_id[str(a_name)] = p.addUserDebugText(a_text, a_pos,textColorRGB=a_color,textSize=a_size)
+		if ( str(a_name)+"_txt" in self.dic_id.keys() ):
+			p.addUserDebugText(a_text, a_pos,textColorRGB=a_color,textSize=a_size,replaceItemUniqueId  = self.dic_id[str(name)+"_txt"])
+		else:
+			self.dic_id[str(a_name)+"_txt"] = p.addUserDebugText(a_text, a_pos,textColorRGB=a_color,textSize=a_size)
 		p.stepSimulation()
 		
 		
 	def draw_line(self, name, a_pos_from = [0,0,0], a_pos_to = [0,0,0], a_size = 0.1, a_color = [1, 0, 0], a_width = 3.0, a_time = 0):
 		if ( str(name)+"_line" in self.dic_id.keys() ):
-			p.removeUserDebugItem(self.dic_id[str(name)+"_line"])
-			
-		self.dic_id[str(name)+"_line"] = p.addUserDebugLine(lineFromXYZ      = a_pos_from  ,
+			p.addUserDebugLine(lineFromXYZ      = a_pos_from  ,
+			   lineToXYZ            = a_pos_to,
+			   lineColorRGB         = a_color  ,
+			   replaceItemUniqueId  = self.dic_id[str(name)+"_line"],
+			   lineWidth            = a_width        ,
+			   lifeTime             = a_time
+					 )	
+		else:
+			self.dic_id[str(name)+"_line"] = p.addUserDebugLine(lineFromXYZ      = a_pos_from  ,
 			   lineToXYZ            = a_pos_to,
 			   lineColorRGB         = a_color  ,
 			   lineWidth            = a_width        ,
 			   lifeTime             = a_time
 					 )	
+		p.stepSimulation()
 		
 	def draw_cross(self, name, a_pos = [0,0,0], a_size = 0.1, a_color = [1, 0, 0], a_width = 3.0, a_time = 0):
 		
 		if ( str(name)+"_x" in self.dic_id.keys() ):
-			p.removeUserDebugItem(self.dic_id[str(name)+"_x"])
-			
-		if ( str(name)+"_y" in self.dic_id.keys() ):
-			p.removeUserDebugItem(self.dic_id[str(name)+"_y"])	
-		
-		if ( str(name)+"_z" in self.dic_id.keys() ):
-			p.removeUserDebugItem(self.dic_id[str(name)+"_z"])	
-		
-		self.dic_id[str(name)+"_x"] = p.addUserDebugLine(lineFromXYZ      = [a_pos[0]+a_size, a_pos[1], a_pos[2]]  ,
+			p.addUserDebugLine(lineFromXYZ      = [a_pos[0]+a_size, a_pos[1], a_pos[2]]  ,
+			   lineToXYZ            = [a_pos[0]-a_size, a_pos[1], a_pos[2]],
+			   lineColorRGB         = a_color,
+			   replaceItemUniqueId  = self.dic_id[str(name)+"_x"],
+			   lineWidth            = a_width,
+			   lifeTime             = a_time
+				  )
+		else:
+			self.dic_id[str(name)+"_x"] = p.addUserDebugLine(lineFromXYZ      = [a_pos[0]+a_size, a_pos[1], a_pos[2]]  ,
 			   lineToXYZ            = [a_pos[0]-a_size, a_pos[1], a_pos[2]],
 			   lineColorRGB         = a_color,
 			   lineWidth            = a_width,
 			   lifeTime             = a_time
 				  )
-			   
-		self.dic_id[str(name)+"_y"] = p.addUserDebugLine(lineFromXYZ      = [a_pos[0], a_pos[1]+a_size, a_pos[2]]  ,
+		
+		
+		
+			
+		if ( str(name)+"_y" in self.dic_id.keys() ):
+			p.addUserDebugLine(lineFromXYZ      = [a_pos[0], a_pos[1]+a_size, a_pos[2]]  ,
+			   lineToXYZ            = [a_pos[0], a_pos[1]-a_size, a_pos[2]],
+			   lineColorRGB         = a_color  ,
+			   replaceItemUniqueId  = self.dic_id[str(name)+"_y"],
+			   lineWidth            = a_width        ,
+			   lifeTime             = a_time
+					 )
+			
+		else:
+			self.dic_id[str(name)+"_y"] = p.addUserDebugLine(lineFromXYZ      = [a_pos[0], a_pos[1]+a_size, a_pos[2]]  ,
 			   lineToXYZ            = [a_pos[0], a_pos[1]-a_size, a_pos[2]],
 			   lineColorRGB         = a_color  ,
 			   lineWidth            = a_width        ,
 			   lifeTime             = a_time
 					 )
-					 
-		self.dic_id[str(name)+"_z"] = p.addUserDebugLine(lineFromXYZ      = [a_pos[0], a_pos[1], a_pos[2]+a_size]  ,
+			
+		
+		if ( str(name)+"_z" in self.dic_id.keys() ):
+			p.addUserDebugLine(lineFromXYZ      = [a_pos[0], a_pos[1], a_pos[2]+a_size]  ,
+			   lineToXYZ            = [a_pos[0], a_pos[1], a_pos[2]-a_size],
+			   lineColorRGB         = a_color  ,
+			   replaceItemUniqueId  = self.dic_id[str(name)+"_z"],
+			   lineWidth            = a_width        ,
+			   lifeTime             = a_time
+					 )
+		else:
+			self.dic_id[str(name)+"_z"] = p.addUserDebugLine(lineFromXYZ      = [a_pos[0], a_pos[1], a_pos[2]+a_size]  ,
 			   lineToXYZ            = [a_pos[0], a_pos[1], a_pos[2]-a_size],
 			   lineColorRGB         = a_color  ,
 			   lineWidth            = a_width        ,
 			   lifeTime             = a_time
 					 )
-			   
 		p.stepSimulation()
-
-
+	
 	def draw_box(self, low , high , color = [0, 0, 1]):
 		low_array = low
 		high_array = high
