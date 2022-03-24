@@ -36,7 +36,7 @@ class PandaFriteEnv(gym.Env):
 		self.id_save_button = None
 		
 		
-		# Points from bottom to up
+		# Points (on the front side) from bottom to up
 		# [31, 15]
 		#   ||
 		#   vv
@@ -49,30 +49,30 @@ class PandaFriteEnv(gym.Env):
 		# [9, 6] (TIP)
 		self.id_frite_to_follow = [ [31, 15], [13, 10], [18, 14], [9, 6] ]  # left then right  [left, right], [left,right] ...
 		
-		# Points from bottom to up, on the same plane of id_frite_to _follow, one level under
-		# [63, 38]
+		# Points from bottom to up, on the same plane of id_frite_to _follow, one level under ((on the front side)
+		# [63, 38] (under)
 		# [31, 15]
 		#   ||
 		#   vv
-		# [58, 54]
+		# [58, 54] (under)
 		# [13, 10]
 		#   ||
 		#   vv
-		# [42, 37]
+		# [42, 37] (under)
 		# [18, 14]
 		#   ||
 		#   vv
-		# [28, 53]
+		# [28, 53] (under)
 		# [9, 6] (TIP)
 		self.under_id_frite_to_follow = [ [63, 38], [58, 54], [42, 37], [28, 53] ]  # left then right  [left, right], [left,right] ...
 		
-		# mean tip between 28,53 (front) and 27, 26 (back)
+		# mean tip between 28,53 (on front side) and 27, 26 (on back side)
 		# 28 is front, 27 is back
 		# 53 is front, 26 is back
-		#     27      26
+		#     27------26
 		#   .        .
 		#  .        .
-		# 28       53
+		# 28------53
 		self.id_frite_locate_tip = [ [28, 27], [53, 26] ] # [left,left] then [right,right]
 		
 		# array containing the upper mean point shifted by a normalized normal vector
@@ -183,21 +183,26 @@ class PandaFriteEnv(gym.Env):
 		return rt_matrix
 	
 	def frame_transform(self):
-		# world position of point 'mesh1' to follow  (TIP)
+		# len(self.position_mesh_to_follow)-1 -> index of TIP -> mesh1
+		# world position of point 'tip' shifted by a normal vector to follow  (TIP)
 		mesh1_pos_world = self.position_mesh_to_follow[len(self.position_mesh_to_follow)-1]
 		
-		# 4 vector of mesh1 world position
-		mesh1_v4 = np.array([mesh1_pos_world[0], mesh1_pos_world[1], mesh1_pos_world[2], 1])
+		# 4 vector of shifted_tip_pos_world
+		mesh1_pos_world_v4 = np.array([mesh1_pos_world[0], mesh1_pos_world[1], mesh1_pos_world[2], 1])
 		
-		# tip position and orientation (quaternion)
+		# end effector (tip/gripper) position and orientation (quaternion)
 		gripper_pos = p.getLinkState(self.panda_id, self.panda_end_eff_idx)[0]
 		gripper_orient = p.getLinkState(self.panda_id, self.panda_end_eff_idx)[1]
 		
-		# world tip matrix RT
-		rt_matrix = self.to_rt_matrix(gripper_orient,gripper_pos)
+		# matrix that express the tip/gripper pos into world frame
+		world_gripper_rt_matrix = self.to_rt_matrix(gripper_orient,gripper_pos)
 		
-		# LA.inv(rt_matrix) -> tip world matrix RT 
-		mesh1_in_tip_frame = np.dot(LA.inv(rt_matrix),mesh1_v4)
+		# LA.inv(rt_matrix) -> tip world matrix RT   
+		# ( Mworld->gripper = gripper express into world frame)
+		# LA.inv(world_gripper_rt_matrix) -> Mgripper->world  ( world express into tip/gripper frame)
+		# Mgripper->world * mesh1_pos_world_v4 (mesh1 express into world frame) -> mesh1 express into tip/gripper frame
+		
+		mesh1_in_tip_frame = np.dot(LA.inv(world_gripper_rt_matrix),mesh1_pos_world_v4)
 		
 		# mesh1 norm express into tip frame
 		mesh1_norm = LA.norm(mesh1_in_tip_frame[0:3])
@@ -206,8 +211,10 @@ class PandaFriteEnv(gym.Env):
 		print("dx={}, dy={}, dz={}".format((mesh1_pos_world[0]-gripper_pos[0]),(mesh1_pos_world[1]-gripper_pos[1]), (mesh1_pos_world[2]-gripper_pos[2]) ))
 		print("x={}, y={}, z={}".format(mesh1_in_tip_frame[0], mesh1_in_tip_frame[1], mesh1_in_tip_frame[2]))
 		
-	
-	def compute_normal_vector_mesh_surface(self, pt_left, pt_right, pt_mean, a_distance = 0.2):
+		
+	# Shift 'pt_mean' point with a distance 'a_distance' 
+	# using a normal vector calculated from 3 points : 'pt_left', 'pt_right', 'pt_mean'. 
+	def shift_point_in_normal_direction(self, pt_left, pt_right, pt_mean, a_distance = 0.2):
 		# under left and right points
 		vleft = np.array([pt_left[0], pt_left[1], pt_left[2]])
 		vright = np.array([pt_right[0], pt_right[1], pt_right[2]])
@@ -256,7 +263,7 @@ class PandaFriteEnv(gym.Env):
 			a_pt_left = np.array(data[1][self.id_frite_to_follow[i][0]])
 			a_pt_right = np.array(data[1][self.id_frite_to_follow[i][1]])
 			
-			# calculate the upper mean between left and right upper points
+			# calculate the upper mean (front side) between left and right upper points
 			self.mean_position_to_follow[i] = (a_pt_left + a_pt_right)/2.0
 			
 			# get left and right under points
@@ -266,10 +273,10 @@ class PandaFriteEnv(gym.Env):
 			# calculate the upper mean point shifted by a normalized normal vector.
 			# The normal vector is calculated from a triangle defined by left+right under points and upper mean point.
 			# 0.007 is equal to the half of the marker thickness
-			self.position_mesh_to_follow[i] = self.compute_normal_vector_mesh_surface(pt_left=a_pt_left_under, pt_right=a_pt_right_under, pt_mean=self.mean_position_to_follow[i], a_distance = 0.007)
+			self.position_mesh_to_follow[i] = self.shift_point_in_normal_direction(pt_left=a_pt_left_under, pt_right=a_pt_right_under, pt_mean=self.mean_position_to_follow[i], a_distance = 0.007)
 			
 			if draw_normal:
-				a_normal_pt = self.compute_normal_vector_mesh_surface(pt_left=a_pt_left_under, pt_right=a_pt_right_under, pt_mean=self.mean_position_to_follow[i], a_distance = 0.1)
+				a_normal_pt = self.shift_point_in_normal_direction(pt_left=a_pt_left_under, pt_right=a_pt_right_under, pt_mean=self.mean_position_to_follow[i], a_distance = 0.1)
 				self.draw_normal_plane(i, data, a_normal_pt)
 			
 		# Compute only for the TIP
@@ -280,21 +287,21 @@ class PandaFriteEnv(gym.Env):
 		# mean between 28,53 and 27, 26
 		pt_left_1 = np.array(data[1][self.id_frite_locate_tip[0][0]])  # 28
 		pt_left_2 = np.array(data[1][self.id_frite_locate_tip[0][1]])  # 27
-		pt_mean_left = (pt_left_1 + pt_left_2) / 2.0
+		pt_mean_left = (pt_left_1 + pt_left_2) / 2.0  # point left inside 'frite'
 		
 		pt_right_1 = np.array(data[1][self.id_frite_locate_tip[1][0]]) # 53
 		pt_right_2 = np.array(data[1][self.id_frite_locate_tip[1][1]]) # 26
-		pt_mean_right = (pt_right_1 + pt_right_2) / 2.0
+		pt_mean_right = (pt_right_1 + pt_right_2) / 2.0 # point right inside 'frite'
 		
-		# Get the real position of the TIP from pybullet
+		# Get the real position of the TIP from pybullet (inside the 'frite')
 		self.mean_position_to_follow[len(self.position_mesh_to_follow)-1] = p.getLinkState(self.panda_id, self.panda_end_eff_idx)[0]
 		
 		# 0.025 is equal to the half of the "frite" width
 		# 0.007 is equal to the half of the marker thickness
-		self.position_mesh_to_follow[len(self.position_mesh_to_follow)-1] = self.compute_normal_vector_mesh_surface(pt_left=pt_mean_left, pt_right=pt_mean_right, pt_mean=self.mean_position_to_follow[len(self.position_mesh_to_follow)-1], a_distance = (0.007 + 0.025))
+		self.position_mesh_to_follow[len(self.position_mesh_to_follow)-1] = self.shift_point_in_normal_direction(pt_left=pt_mean_left, pt_right=pt_mean_right, pt_mean=self.mean_position_to_follow[len(self.position_mesh_to_follow)-1], a_distance = (0.007 + 0.025))
 		
 		if draw_normal:
-			a_normal_pt = self.compute_normal_vector_mesh_surface(pt_left=pt_mean_left, pt_right=pt_mean_right, pt_mean=self.mean_position_to_follow[len(self.position_mesh_to_follow)-1], a_distance = 0.1)
+			a_normal_pt = self.shift_point_in_normal_direction(pt_left=pt_mean_left, pt_right=pt_mean_right, pt_mean=self.mean_position_to_follow[len(self.position_mesh_to_follow)-1], a_distance = 0.1)
 			self.draw_normal_plane(len(self.position_mesh_to_follow)-1, data, a_normal_pt)
 				
 	def draw_cross_mesh_to_follow(self):
