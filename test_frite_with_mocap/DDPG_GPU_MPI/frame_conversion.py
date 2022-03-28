@@ -21,32 +21,86 @@ matrix_base_frame_in_mocap_frame = 0
 matrix_mocap_frame_in_arm_frame = 0
 
 def to_rt_matrix(Q, T):
+	
+	# to test : https://www.andre-gaschler.com/rotationconverter/
+	
 	# Extract the values from Q
-	q0 = Q.w
-	q1 = Q.x
-	q2 = Q.y
-	q3 = Q.z
-	 
+	qw = Q.w
+	qx = Q.x
+	qy = Q.y
+	qz = Q.z
+	
+	# https://pybullet.org/Bullet/BulletFull/btMatrix3x3_8h_source.html
+	# https://www.tabnine.com/web/assistant/code/rs/5c7cb2fc2ef5570001df5f0e#L546
+	# https://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToMatrix/index.htm
+	# https://lucidar.me/fr/quaternions/quaternion-normalization/
+	
+	d = qx*qx + qy*qy + qz*qz + qw*qw
+	s = 2.0 / d
+	
+	xs = qx * s
+	ys = qy * s
+	zs = qz * s
+	wx = qw * xs
+	wy = qw * ys
+	wz = qw * zs
+	xx = qx * xs
+	xy = qx * ys
+	xz = qx * zs
+	yy = qy * ys
+	yz = qy * zs
+	zz = qz * zs
+	
+	
+	r00 = 1.0 - (yy + zz)
+	r01 = xy - wz
+	r02 = xz + wy
+	
+	r10 = xy + wz
+	r11 = 1.0 - (xx + zz)
+	r12 = yz - wx
+	
+	r20 = xz - wy
+	r21 = yz + wx
+	r22 = 1.0 - (xx + yy)
+	
+	
+	# 4x4 RT matrix
+	rt_matrix = np.array([[r00, r01, r02, T.x],
+						   [r10, r11, r12, T.y],
+						   [r20, r21, r22, T.z],
+						   [0, 0, 0, 1]])
+	
+	
+	""" 
 	# First row of the rotation matrix
-	r00 = 2 * (q0 * q0 + q1 * q1) - 1
-	r01 = 2 * (q1 * q2 - q0 * q3)
-	r02 = 2 * (q1 * q3 + q0 * q2)
+	# https://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToMatrix/index.htm
+	# [1 - 2*qy^2 - 2*qz^2, 2*qx*qy - 2*qz*qw, 2*qx*qz + 2*qy*qw]
+	# [2*qx*qy + 2*qz*qw, 1 - 2*qx^2 - 2*qz^2, 2*qy*qz - 2*qx*qw]
+	# [2*qx*qz - 2*qy*qw, 2*qy*qz + 2*qx*qw, 1 - 2*qx^2 - 2*qy^2]
+	
+	
+
+	r00 = 1 - 2 * (qy * qy + qz * qz)
+	r01 = 2 * (qx * qy - qz * qw)
+	r02 = 2 * (qx * qz + qy * qw)
 	 
 	# Second row of the rotation matrix
-	r10 = 2 * (q1 * q2 + q0 * q3)
-	r11 = 2 * (q0 * q0 + q2 * q2) - 1
-	r12 = 2 * (q2 * q3 - q0 * q1)
+	r10 = 2 * (qx * qy + qz * qw)
+	r11 = 1 - 2 * (qx * qx + qz * qz)
+	r12 = 2 * (qy * qz - qx * qw)
 	 
 	# Third row of the rotation matrix
-	r20 = 2 * (q1 * q3 - q0 * q2)
-	r21 = 2 * (q2 * q3 + q0 * q1)
-	r22 = 2 * (q0 * q0 + q3 * q3) - 1
+	r20 = 2 * (qx * qz - qy * qw)
+	r21 = 2 * (qy * qz + qx * qw)
+	r22 = 1- 2 * (qx * qx + qy * qy)
 	 
 	# 4x4 RT matrix
 	rt_matrix = np.array([[r00, r01, r02, T.x],
 						   [r10, r11, r12, T.y],
 						   [r20, r21, r22, T.z],
 						   [0, 0, 0, 1]])
+	"""
 							
 	return rt_matrix
 
