@@ -30,7 +30,7 @@ from database_frite import Database_Frite
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode', default='train', type=str) # mode = 'train' or 'test' or 'debug_cartesian' or 'debug_articular'
-parser.add_argument("--env_name", default="PandaFrite-v1")
+parser.add_argument("--env_name", default="PandaFrite-v0")
 parser.add_argument('--log_interval', default=50, type=int) #
 parser.add_argument('--max_episode', default=2000, type=int) # num of episodes
 parser.add_argument('--max_step', default=500, type=int) # num of step per episodes
