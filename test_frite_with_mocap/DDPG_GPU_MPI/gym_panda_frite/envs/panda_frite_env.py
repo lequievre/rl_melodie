@@ -498,6 +498,14 @@ class PandaFriteEnv(gym.Env):
 
 		return list_lower_limits, list_upper_limits, list_joint_ranges, list_initial_poses
 	
+	
+	def printCurrentEndEffPosition(self):
+		cur_state = p.getLinkState(self.panda_id, self.panda_end_eff_idx)
+		cur_pos = np.array(cur_state[0])
+		cur_orien = np.array(cur_state[1])
+		print("End Eff position => x={:.3f}, y={:.3f}, z={:.3f} ".format(cur_pos[0], cur_pos[1], cur_pos[2]))
+		
+		
 	def printPandaAllInfo(self):
 		print("=================================")
 		print("All Panda Robot joints info")
