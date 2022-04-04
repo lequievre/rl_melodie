@@ -12,9 +12,14 @@ from numpy import linalg as LA
 import rospy
 import rospkg
 import threading
+from datetime import datetime
+import time
 
 from geometry_msgs.msg import PoseArray, Point, Quaternion
 from geometry_msgs.msg import PoseStamped
+
+from std_msgs.msg import Float64
+from std_msgs.msg import Float64MultiArray
 
 from visualization_msgs.msg import MarkerArray, Marker
 
@@ -180,16 +185,16 @@ class PandaFriteEnvROS(gym.Env):
 		self.go_to_home_position()
 		input("Press Enter to start !")
 		
-		copy_of_array_mocap_poses_base_frame = None
-		nb_goal_to_sample = 50
+		nb_goal_to_sample = 10
 		self.open_database_mocap()
 		
 		for i in range(nb_goal_to_sample):
 			a_goal = self.sample_goal_database()
+			print("{} -> try goal : {}".format(i,a_goal))
 			self.go_to_position(a_goal)
 			
 			# wait a time to reach the 'goal' position
-			time.sleep(4)
+			time.sleep(2)
 			
 			self.mutex_array_mocap.acquire()
 			try:
@@ -240,10 +245,10 @@ class PandaFriteEnvROS(gym.Env):
 		pose_msg.pose.position.y = command[1]
 		pose_msg.pose.position.z = command[2]
 	
-		pose_msg.pose.orientation.x = 0
-		pose_msg.pose.orientation.y = 0
-		pose_msg.pose.orientation.z = 0
-		pose_msg.pose.orientation.w = 1
+		pose_msg.pose.orientation.x = self.init_cartesian_orientation[0]
+		pose_msg.pose.orientation.y = self.init_cartesian_orientation[1]
+		pose_msg.pose.orientation.z = self.init_cartesian_orientation[2]
+		pose_msg.pose.orientation.w = self.init_cartesian_orientation[3]
 		
 		self.publisher_position.publish(pose_msg)
 	
@@ -349,7 +354,7 @@ class PandaFriteEnvROS(gym.Env):
 		
 		self.matrix_base_frame_in_mocap_frame = None
 		self.matrix_mocap_frame_in_arm_frame = None
-										
+		self.init_cartesian_orientation = np.array([1.000, -0.000, 0.000, 0.000])
 										
 		self.matrix_base_frame_in_arm_frame = np.array(
 											[[1, 0, 0, 0.025],

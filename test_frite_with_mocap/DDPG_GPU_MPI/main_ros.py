@@ -86,8 +86,9 @@ def main():
 	noise = OUNoise(env.action_space)
     
 	env.init_ros()
+	env.generate_mocap_databases()
 
-	state = env.reset(use_frite=True)
+	#state = env.reset(use_frite=True)
 
 	while True:
 		keys = p.getKeyboardEvents()

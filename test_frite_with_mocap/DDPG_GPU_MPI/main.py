@@ -222,6 +222,7 @@ def main():
             if 65309 in keys:
                break	       
     elif args.mode == 'generate_database':
+        
         state = env.reset(use_frite=True)
         env.draw_env_box()
         
@@ -232,6 +233,7 @@ def main():
         db.generate()
         
         print("End !")
+        
         
         while True:
             keys = p.getKeyboardEvents()
