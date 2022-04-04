@@ -175,13 +175,18 @@ class PandaFriteEnvROS(gym.Env):
 		self.file_goal_mocap_poses.close()
 		
 	def generate_mocap_databases(self):
+		
+		input("Press Enter to go to Home position !")
+		self.go_to_home_position()
+		input("Press Enter to start !")
+		
 		copy_of_array_mocap_poses_base_frame = None
 		nb_goal_to_sample = 50
 		self.open_database_mocap()
 		
 		for i in range(nb_goal_to_sample):
 			a_goal = self.sample_goal_database()
-			self.publish_position(a_goal)
+			self.go_to_position(a_goal)
 			
 			# wait a time to reach the 'goal' position
 			time.sleep(4)
@@ -204,7 +209,31 @@ class PandaFriteEnvROS(gym.Env):
 		goal = np.array(self.goal_space.sample())
 		return goal.copy()
 		
+	def go_to_position(self, a_position):
+		self.publish_position(a_position)
 		
+		start=datetime.now()
+		
+		while True:
+			#print("attente !")
+			self.mutex_observation.acquire()
+			try:
+				current_tip_position = self.tip_position.copy()
+			finally:
+				self.mutex_observation.release()
+			
+			if np.linalg.norm(current_tip_position - a_position, axis=-1) <= 0.03:
+				print("Exit with precision !")
+				break
+			
+			if (datetime.now()-start).total_seconds() >= 2:
+				print("Exit with time !")
+				break
+		
+	def go_to_home_position(self):
+		# End Eff home position => x=0.554, y=0.000, z=0.521
+		self.go_to_position(np.array([0.554, 0.000, 0.521]))
+			
 	def publish_position(self, command):
 		pose_msg = PoseStamped()
 		pose_msg.pose.position.x = command[0]
@@ -278,7 +307,19 @@ class PandaFriteEnvROS(gym.Env):
 		
 		self.publisher_poses_meshes_in_arm_frame.publish(marker_array_msg)
 		self.publisher_line_strip_in_arm_frame.publish(line_strip_msg)
-		
+	
+	def observation_callback(self, msg):
+		self.mutex_observation.acquire()
+		try:
+			
+			tip_position_list = [msg.data[0], msg.data[1], msg.data[2]]
+			self.tip_position = np.array(tip_position_list)
+			
+			tip_velocity_list = [msg.data[3], msg.data[4], msg.data[5]]
+			self.tip_velocity = np.array(tip_velocity_list)
+			
+		finally:
+			self.mutex_observation.release()	
 		
 	def mocap_callback(self, msg):
 		
@@ -319,7 +360,14 @@ class PandaFriteEnvROS(gym.Env):
 										
 		self.poses_meshes_in_arm_frame = np.array([[None, None, None, None],[None, None, None, None],[None, None, None, None],[None, None, None, None],[None, None, None, None]])
 		
+		self.mutex_observation = threading.Lock()
+		self.mutex_array_mocap = threading.Lock()
+		
+		
 		rospy.Subscriber('/PoseAllBodies', PoseArray, self.mocap_callback,
+						 queue_size=10)
+						 
+		rospy.Subscriber('/cartesian_impedance_example_controller/current_observation', Float64MultiArray, self.observation_callback,
 						 queue_size=10)
 						 
 		self.publisher_poses_meshes_in_arm_frame = rospy.Publisher('/VisualizationPoseArrayMarkersInArmFrame', MarkerArray, queue_size=10)
@@ -328,7 +376,7 @@ class PandaFriteEnvROS(gym.Env):
 		
 		self.publisher_position = rospy.Publisher('/cartesian_impedance_example_controller/equilibrium_pose', PoseStamped, queue_size=10)
 		
-		self.mutex_array_mocap = threading.Lock()
+		
 	
 	def to_rt_matrix(self,Q, T):
 	
