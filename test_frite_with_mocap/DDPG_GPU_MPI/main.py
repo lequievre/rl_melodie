@@ -214,6 +214,9 @@ def main():
         env.draw_gripper_position()
         print("first state = {}".format(state))
         env.draw_all_ids_mesh_frite()
+        
+        env.printCurrentEndEffPosition()
+        
         while True:
             keys = p.getKeyboardEvents()
             if 65309 in keys:
