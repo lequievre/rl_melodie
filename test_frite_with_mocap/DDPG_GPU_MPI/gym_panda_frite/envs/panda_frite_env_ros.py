@@ -10,9 +10,11 @@ import math
 from numpy import linalg as LA
 
 import rospy
-import rospkg 
+import rospkg
+import threading
 
 from geometry_msgs.msg import PoseArray, Point, Quaternion
+from geometry_msgs.msg import PoseStamped
 
 from visualization_msgs.msg import MarkerArray, Marker
 
@@ -88,6 +90,10 @@ class PandaFriteEnvROS(gym.Env):
 		# array containing the upper mean points (between left and right upper points)
 		self.mean_position_to_follow = [None, None, None, None]
 		
+		# Numpy array that content the Poses and orientation of each rigid body defined with the mocap
+		# [[mesh0 geometry_msgs/Pose ], [mesh1 geometry_msgs/Pose] ..., [mesh n geometry_msgs/Pose]]
+		self.array_mocap_poses_base_frame = None
+		
 		#self.debug_id_frite_to_follow = [[None,None],[None,None]]  # draw 2 lines (a cross) per id frite to follow
 		
 		self.debug_gui = Debug_Gui(env = self)
@@ -162,18 +168,83 @@ class PandaFriteEnvROS(gym.Env):
 			self.debug_gui.draw_cross("mesh_mocap_" + str(i) , a_pos = [self.poses_meshes_in_arm_frame[i][0],self.poses_meshes_in_arm_frame[i][1],self.poses_meshes_in_arm_frame[i][2]]
 		)
 	
+	def open_database_mocap(self):
+		self.file_goal_mocap_poses = open("database_goal_mocap_poses.txt", "w+")
+		
+	def close_database_mocap(self):
+		self.file_goal_mocap_poses.close()
+		
+	def generate_mocap_databases(self):
+		copy_of_array_mocap_poses_base_frame = None
+		nb_goal_to_sample = 50
+		self.open_database_mocap()
+		
+		for i in range(nb_goal_to_sample):
+			a_goal = self.sample_goal_database()
+			self.publish_position(a_goal)
+			
+			# wait a time to reach the 'goal' position
+			time.sleep(4)
+			
+			self.mutex_array_mocap.acquire()
+			try:
+				copy_of_array_mocap_poses_base_frame = self.array_mocap_poses_base_frame.copy()
+			finally:
+				self.mutex_array_mocap.release()
+				
+			self.file_goal_mocap_poses.write("{:.3f} {:.3f} {:.3f}".format(a_goal[0], a_goal[1], a_goal[2]))
+			for a_pose in copy_of_array_mocap_poses_base_frame:
+				self.file_goal_mocap_poses.write(" {:.3f} {:.3f} {:.3f}".format(a_pose.position.x, a_pose.position.y, a_pose.position.z))
+			self.file_goal_mocap_poses.write("\n")
+			
+		self.close_database_mocap()
+	
+	def sample_goal_database(self):
+		# sample a goal np.array[x,v,z] from the goal_space 
+		goal = np.array(self.goal_space.sample())
+		return goal.copy()
+		
+		
+	def publish_position(self, command):
+		pose_msg = PoseStamped()
+		pose_msg.pose.position.x = command[0]
+		pose_msg.pose.position.y = command[1]
+		pose_msg.pose.position.z = command[2]
+	
+		pose_msg.pose.orientation.x = 0
+		pose_msg.pose.orientation.y = 0
+		pose_msg.pose.orientation.z = 0
+		pose_msg.pose.orientation.w = 1
+		
+		self.publisher_position.publish(pose_msg)
+	
 	
 	def publish_mocap_mesh(self):
 		
 		simple_marker_msg = Marker()
 		marker_array_msg = MarkerArray()
 		marker_array_msg.markers = []
-
 		
-		  
+		line_strip_msg = Marker()
+		line_strip_msg.points = []
+		
+		line_strip_msg.header.frame_id = "panda_link0"
+		line_strip_msg.header.stamp = rospy.get_rostime()
+		line_strip_msg.id = 31
+		line_strip_msg.ns = "points_and_lines_in_arm_frame"
+		line_strip_msg.action = line_strip_msg.ADD
+		line_strip_msg.type = line_strip_msg.LINE_STRIP
+		line_strip_msg.scale.x = 0.01
+		line_strip_msg.scale.y = 0.01
+		line_strip_msg.scale.z = 0.01
+		line_strip_msg.color.b = 1.0
+		line_strip_msg.color.a = 1.0
+		line_strip_msg.pose.orientation.w = 1.0
+
+
 		for i in range(len(self.poses_meshes_in_arm_frame)):
 			simple_marker_msg = Marker()
-			simple_marker_msg.header.frame_id = "map"
+			simple_marker_msg.header.frame_id = "panda_link0"
 			simple_marker_msg.header.stamp = rospy.get_rostime()
 			simple_marker_msg.ns = "points_and_lines_in_arm_frame"
 			simple_marker_msg.action = simple_marker_msg.ADD
@@ -195,10 +266,27 @@ class PandaFriteEnvROS(gym.Env):
 			simple_marker_msg.pose.orientation.w = 1
 			
 			marker_array_msg.markers.append(simple_marker_msg)
+			
+			if i > 0:
+				point_msg = Point()
+				point_msg.x = self.poses_meshes_in_arm_frame[i][0]
+				point_msg.y = self.poses_meshes_in_arm_frame[i][1]
+				point_msg.z = self.poses_meshes_in_arm_frame[i][2]
+				
+				line_strip_msg.points.append(point_msg)
+			
 		
 		self.publisher_poses_meshes_in_arm_frame.publish(marker_array_msg)
+		self.publisher_line_strip_in_arm_frame.publish(line_strip_msg)
+		
 		
 	def mocap_callback(self, msg):
+		
+		self.mutex_array_mocap.acquire()
+		try:
+			self.array_mocap_poses_base_frame = np.array(msg.poses)
+		finally:
+			self.mutex_array_mocap.release()
 		
 		pos_base_frame = msg.poses[0].position
 		orien_base_frame = msg.poses[0].orientation
@@ -207,8 +295,8 @@ class PandaFriteEnvROS(gym.Env):
 
 		self.matrix_mocap_frame_in_arm_frame = np.dot(self.matrix_base_frame_in_arm_frame, LA.inv(self.matrix_base_frame_in_mocap_frame))
 
-		for i in range(4):
-			pos_mesh_in_mocap_frame = np.array([msg.poses[i+1].position.x,msg.poses[i+1].position.y,msg.poses[i+1].position.z,1])
+		for i in range(5):
+			pos_mesh_in_mocap_frame = np.array([msg.poses[i].position.x,msg.poses[i].position.y,msg.poses[i].position.z,1])
 			self.poses_meshes_in_arm_frame[i] = np.dot(self.matrix_mocap_frame_in_arm_frame, pos_mesh_in_mocap_frame)
 				
 		#self.draw_cross_mocap_mesh()
@@ -229,14 +317,18 @@ class PandaFriteEnvROS(gym.Env):
 											[0, 0, 0, 1]]
 										)
 										
-		self.poses_meshes_in_arm_frame = np.array([[None, None, None, None],[None, None, None, None],[None, None, None, None],[None, None, None, None]])
+		self.poses_meshes_in_arm_frame = np.array([[None, None, None, None],[None, None, None, None],[None, None, None, None],[None, None, None, None],[None, None, None, None]])
 		
 		rospy.Subscriber('/PoseAllBodies', PoseArray, self.mocap_callback,
 						 queue_size=10)
 						 
 		self.publisher_poses_meshes_in_arm_frame = rospy.Publisher('/VisualizationPoseArrayMarkersInArmFrame', MarkerArray, queue_size=10)
-						 
-	
+		
+		self.publisher_line_strip_in_arm_frame = rospy.Publisher('/VisualizationLineStripMarkerInArmFrame', Marker, queue_size=10)
+		
+		self.publisher_position = rospy.Publisher('/cartesian_impedance_example_controller/equilibrium_pose', PoseStamped, queue_size=10)
+		
+		self.mutex_array_mocap = threading.Lock()
 	
 	def to_rt_matrix(self,Q, T):
 	
