@@ -86,15 +86,18 @@ def main():
 	noise = OUNoise(env.action_space)
     
 	env.init_ros()
-	env.generate_mocap_databases()
+	#env.generate_mocap_databases()
+	env.load_database_mocap()
+	
+	input("Press Enter to stop !")
 
 	#state = env.reset(use_frite=True)
-
+	"""
 	while True:
 		keys = p.getKeyboardEvents()
 		if 65309 in keys:
 		   break	
-
+	"""
         
 if __name__ == '__main__':
     main()

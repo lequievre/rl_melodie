@@ -176,8 +176,96 @@ class PandaFriteEnvROS(gym.Env):
 	def open_database_mocap(self):
 		self.file_goal_mocap_poses = open("database_goal_mocap_poses.txt", "w+")
 		
+	def open_database_mocap_in_read_mode(self):
+		self.file_goal_mocap_poses = open("database_goal_mocap_poses.txt")
+		
 	def close_database_mocap(self):
 		self.file_goal_mocap_poses.close()
+		
+	
+	def go_to_position_simulated(self, a_position):
+		
+		cur_state = p.getLinkState(self.panda_id, self.panda_end_eff_idx)
+		cur_pos = np.array(cur_state[0])
+		cur_orien = np.array(cur_state[1])
+		
+		new_pos = a_position
+		jointPoses = p.calculateInverseKinematics(self.panda_id, self.panda_end_eff_idx, new_pos, cur_orien)[0:7]
+		
+		for i in range(len(jointPoses)):
+			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=10 * 240.)
+			p.stepSimulation()
+			
+		p.stepSimulation()
+	
+	
+	def transform_mocap_poses_to_arm_poses(self, mocap_poses):
+		
+		poses_meshes_in_arm_frame = np.array([[None, None, None, None],[None, None, None, None],[None, None, None, None],[None, None, None, None],[None, None, None, None]])
+		
+		pos_base_frame = mocap_poses[0]
+		orien_base_frame = np.array([-0.01293, -0.00056, 0.012016, 0.999843])
+
+		matrix_base_frame_in_mocap_frame = self.to_rt_matrix_numpy(orien_base_frame, pos_base_frame)
+
+		matrix_mocap_frame_in_arm_frame = np.dot(self.matrix_base_frame_in_arm_frame, LA.inv(matrix_base_frame_in_mocap_frame))
+
+		for i in range(5):
+			pos_mesh_in_mocap_frame = np.array([mocap_poses[i][0],mocap_poses[i][1],mocap_poses[i][2],1])
+			poses_meshes_in_arm_frame[i] = np.dot(matrix_mocap_frame_in_arm_frame, pos_mesh_in_mocap_frame)
+		
+		return poses_meshes_in_arm_frame
+		
+	def load_database_mocap(self):
+		
+		input("Press Enter to start load !")
+		self.open_database_mocap_in_read_mode()
+	
+		poses_mocap_array = np.zeros((5,3))
+		 
+		for line in self.file_goal_mocap_poses.readlines():
+			line_split = line.split()
+			
+			if (len(line_split) != 18):
+				print("Erreur on line ", nbline)
+				
+			else:
+				goal_x = float(line_split[0])
+				goal_y = float(line_split[1])
+				goal_z = float(line_split[2])
+				print("goal x = {}, y = {}, z = {} ".format(goal_x, goal_y,goal_z))
+				goal_position = np.array([goal_x,goal_y,goal_z])
+				
+				input("go to goal position !")
+				self.go_to_position_simulated(goal_position)
+				
+				
+				
+				for i in range(5):
+					x = float(line_split[((i+1)*3)+0])
+					y = float(line_split[((i+1)*3)+1])
+					z = float(line_split[((i+1)*3)+2])
+					poses_mocap_array[i][0] = x
+					poses_mocap_array[i][1] = y
+					poses_mocap_array[i][2] = z
+				
+				
+				poses_mocap_array_in_arm_frame = self.transform_mocap_poses_to_arm_poses(poses_mocap_array)
+				#print(poses_mocap_array)
+				#print(poses_mocap_array_in_arm_frame)
+				
+				#time.sleep(4)
+				input("draw mesh and normal to follow !")
+				
+				self.compute_mesh_pos_to_follow(draw_normal=True)
+				
+				input("draw mesh mocapin arm frame !")
+				
+				for i in range(len(poses_mocap_array_in_arm_frame)):
+					self.debug_gui.draw_cross("mesh_mocap_" + str(i) , a_pos = [poses_mocap_array_in_arm_frame[i][0],poses_mocap_array_in_arm_frame[i][1],poses_mocap_array_in_arm_frame[i][2]])
+					
+			
+		self.close_database_mocap()
 		
 	def generate_mocap_databases(self):
 		
@@ -185,7 +273,7 @@ class PandaFriteEnvROS(gym.Env):
 		self.go_to_home_position()
 		input("Press Enter to start !")
 		
-		nb_goal_to_sample = 10
+		nb_goal_to_sample = 50
 		self.open_database_mocap()
 		
 		for i in range(nb_goal_to_sample):
@@ -194,7 +282,7 @@ class PandaFriteEnvROS(gym.Env):
 			self.go_to_position(a_goal)
 			
 			# wait a time to reach the 'goal' position
-			time.sleep(2)
+			time.sleep(4)
 			
 			self.mutex_array_mocap.acquire()
 			try:
@@ -354,7 +442,7 @@ class PandaFriteEnvROS(gym.Env):
 		
 		self.matrix_base_frame_in_mocap_frame = None
 		self.matrix_mocap_frame_in_arm_frame = None
-		self.init_cartesian_orientation = np.array([1.000, -0.000, 0.000, 0.000])
+		self.init_cartesian_orientation = np.array([1.000, 0.000, 0.000, 0.000])
 										
 		self.matrix_base_frame_in_arm_frame = np.array(
 											[[1, 0, 0, 0.025],
@@ -381,6 +469,54 @@ class PandaFriteEnvROS(gym.Env):
 		
 		self.publisher_position = rospy.Publisher('/cartesian_impedance_example_controller/equilibrium_pose', PoseStamped, queue_size=10)
 		
+	
+	def to_rt_matrix_numpy(self,Q, T):
+	
+		# Extract the values from Q
+		
+		qx = Q[0]
+		qy = Q[1]
+		qz = Q[2]
+		qw = Q[3]
+		
+		d = qx*qx + qy*qy + qz*qz + qw*qw
+		s = 2.0 / d
+		
+		xs = qx * s
+		ys = qy * s
+		zs = qz * s
+		wx = qw * xs
+		wy = qw * ys
+		wz = qw * zs
+		xx = qx * xs
+		xy = qx * ys
+		xz = qx * zs
+		yy = qy * ys
+		yz = qy * zs
+		zz = qz * zs
+		
+		
+		r00 = 1.0 - (yy + zz)
+		r01 = xy - wz
+		r02 = xz + wy
+		
+		r10 = xy + wz
+		r11 = 1.0 - (xx + zz)
+		r12 = yz - wx
+		
+		r20 = xz - wy
+		r21 = yz + wx
+		r22 = 1.0 - (xx + yy)
+		
+		
+		# 4x4 RT matrix
+		rt_matrix = np.array([[r00, r01, r02, T[0]],
+							   [r10, r11, r12, T[1]],
+							   [r20, r21, r22, T[2]],
+							   [0, 0, 0, 1]])
+								
+		return rt_matrix
+	
 		
 	
 	def to_rt_matrix(self,Q, T):
@@ -672,7 +808,7 @@ class PandaFriteEnvROS(gym.Env):
 	
 	def set_gym_spaces(self):
 		panda_eff_state = p.getLinkState(self.panda_id, self.panda_end_eff_idx)
-		
+		"""
 		# MEDIUM
 		low_marge = 0.1
 		low_x_down = panda_eff_state[0][0]-1.5*low_marge
@@ -685,7 +821,7 @@ class PandaFriteEnvROS(gym.Env):
 		z_low_marge = 0.3
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
-		
+		"""
 		"""
 		# SMALL
 		low_marge = 0.1
@@ -697,6 +833,34 @@ class PandaFriteEnvROS(gym.Env):
 		
 		
 		z_low_marge = 0.25
+		low_z_down = panda_eff_state[0][2]-z_low_marge
+		low_z_up = panda_eff_state[0][2]
+		"""
+		# EXTRA SMALL
+		low_marge = 0.1
+		low_x_down = panda_eff_state[0][0]-0.5*low_marge
+		low_x_up = panda_eff_state[0][0]+0.25*low_marge
+		
+		low_y_down = panda_eff_state[0][1]-1.5*low_marge
+		low_y_up = panda_eff_state[0][1]+1.5*low_marge
+		
+		
+		#z_low_marge = 0.25
+		z_low_marge = 0.10
+		low_z_down = panda_eff_state[0][2]-z_low_marge
+		low_z_up = panda_eff_state[0][2]
+		"""
+		# EXTRA SMALL
+		low_marge = 0.1
+		low_x_down = panda_eff_state[0][0]-1.0*low_marge
+		low_x_up = panda_eff_state[0][0]+0.5*low_marge
+		
+		low_y_down = panda_eff_state[0][1]-2.5*low_marge
+		low_y_up = panda_eff_state[0][1]+2.5*low_marge
+		
+		
+		#z_low_marge = 0.25
+		z_low_marge = 0.10
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
 		"""

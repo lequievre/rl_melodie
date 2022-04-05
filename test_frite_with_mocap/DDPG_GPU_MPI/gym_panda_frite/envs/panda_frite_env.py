@@ -504,7 +504,7 @@ class PandaFriteEnv(gym.Env):
 		cur_pos = np.array(cur_state[0])
 		cur_orien = np.array(cur_state[1])
 		print("End Eff position => x={:.3f}, y={:.3f}, z={:.3f} ".format(cur_pos[0], cur_pos[1], cur_pos[2]))
-		
+		print("End Eff orientation => x={:.3f}, y={:.3f}, z={:.3f}, w={:.3f} ".format(cur_orien[0], cur_orien[1], cur_orien[2], cur_orien[3]))
 		
 	def printPandaAllInfo(self):
 		print("=================================")
