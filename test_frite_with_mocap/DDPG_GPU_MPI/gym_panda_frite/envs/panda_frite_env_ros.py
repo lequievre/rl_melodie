@@ -36,7 +36,7 @@ class PandaFriteEnvROS(gym.Env):
 		
 		# bullet paramters
 		#self.timeStep=1./240
-		self.timeStep = 0.003
+		self.timeStep = 0.0001
 		self.n_substeps = 20
 		self.dt = self.timeStep*self.n_substeps
 		self.max_vel = 1
@@ -193,7 +193,7 @@ class PandaFriteEnvROS(gym.Env):
 		jointPoses = p.calculateInverseKinematics(self.panda_id, self.panda_end_eff_idx, new_pos, cur_orien)[0:7]
 		
 		for i in range(len(jointPoses)):
-			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=10 * 240.)
+			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=100 * 240.)
 			p.stepSimulation()
 			
 		p.stepSimulation()
@@ -239,7 +239,8 @@ class PandaFriteEnvROS(gym.Env):
 				input("go to goal position !")
 				self.go_to_position_simulated(goal_position)
 				
-				
+				for i in range(500):
+					p.stepSimulation()
 				
 				for i in range(5):
 					x = float(line_split[((i+1)*3)+0])
@@ -248,8 +249,7 @@ class PandaFriteEnvROS(gym.Env):
 					poses_mocap_array[i][0] = x
 					poses_mocap_array[i][1] = y
 					poses_mocap_array[i][2] = z
-				
-				
+						
 				poses_mocap_array_in_arm_frame = self.transform_mocap_poses_to_arm_poses(poses_mocap_array)
 				#print(poses_mocap_array)
 				#print(poses_mocap_array_in_arm_frame)
@@ -932,7 +932,13 @@ class PandaFriteEnvROS(gym.Env):
 		print("=================================")
 
 
-	
+	def conv_module_d_young_to_lame(self, E, NU):
+		a_lambda = (E * NU)/((1+NU)*(1-2*NU))
+		a_mu = E/(2*(1+NU))
+		
+		return (a_lambda,a_mu)
+		
+		
 		
 	def load_frite(self):
 		gripper_pos = p.getLinkState(self.panda_id, self.panda_end_eff_idx)[0]
@@ -948,9 +954,12 @@ class PandaFriteEnvROS(gym.Env):
 		frite_up_pos = [gripper_pos[0], gripper_pos[1], frite_z_position + 1.03]
 		self.debug_gui.draw_cross("frite_up" , a_pos = frite_up_pos)
 		"""
+		E = 25*pow(10,6)
+		NU = 0.49
+		(a_lambda,a_mu) = self.conv_module_d_young_to_lame(E,NU)
 		
 		# frite : 103 cm with 0.1 cell size
-		self.frite_id = p.loadSoftBody("vtk/frite.vtk", basePosition = self.frite_startPos, baseOrientation=self.frite_startOrientation, mass = 0.2, useNeoHookean = 1, NeoHookeanMu = 961500, NeoHookeanLambda = 1442300, NeoHookeanDamping = 0.01, useSelfCollision = 1, collisionMargin = 0.001, frictionCoeff = 0.5, scale=1.0)
+		self.frite_id = p.loadSoftBody("vtk/frite.vtk", basePosition = self.frite_startPos, baseOrientation=self.frite_startOrientation, mass = 0.2, useNeoHookean = 1, NeoHookeanMu = a_mu, NeoHookeanLambda = a_lambda, NeoHookeanDamping = 0.01, useSelfCollision = 1, collisionMargin = 0.001, frictionCoeff = 0.5, scale=1.0)
 		#p.changeVisualShape(self.frite_id, -1, flags=p.VISUAL_SHAPE_DOUBLE_SIDED)
 			
 
