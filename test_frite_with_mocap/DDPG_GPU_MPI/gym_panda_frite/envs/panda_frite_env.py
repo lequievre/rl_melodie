@@ -37,7 +37,13 @@ class PandaFriteEnv(gym.Env):
 		
 		
 		# Points (on the front side) from bottom to up
+		# [5, 2]
+		#   ||
+		#   vv
 		# [31, 15]
+		#   ||
+		#   vv
+		# [47, 33]
 		#   ||
 		#   vv
 		# [13, 10]
@@ -46,12 +52,20 @@ class PandaFriteEnv(gym.Env):
 		# [18, 14]
 		#   ||
 		#   vv
+		# [28, 53]
+		#   ||
+		#   vv
 		# [9, 6] (TIP)
-		self.id_frite_to_follow = [ [31, 15], [13, 10], [18, 14], [9, 6] ]  # left then right  [left, right], [left,right] ...
+		#self.id_frite_to_follow = [ [31, 15], [13, 10], [18, 14], [9, 6] ]  # left then right  [left, right], [left,right] ...
+		self.id_frite_to_follow = [ [31, 15], [47, 33], [18, 14], [28, 53] ]  # left then right  [left, right], [left,right] ...
 		
 		# Points from bottom to up, on the same plane of id_frite_to _follow, one level under ((on the front side)
 		# [63, 38] (under)
 		# [31, 15]
+		#   ||
+		#   vv
+		# [64, 45] (under)
+		# [47, 33]
 		#   ||
 		#   vv
 		# [58, 54] (under)
@@ -62,18 +76,11 @@ class PandaFriteEnv(gym.Env):
 		# [18, 14]
 		#   ||
 		#   vv
+		# [23, 32] (under)
 		# [28, 53] (under)
 		# [9, 6] (TIP)
-		self.under_id_frite_to_follow = [ [63, 38], [58, 54], [42, 37], [28, 53] ]  # left then right  [left, right], [left,right] ...
-		
-		# mean tip between 28,53 (on front side) and 27, 26 (on back side)
-		# 28 is front, 27 is back
-		# 53 is front, 26 is back
-		#     27------26
-		#   .        .
-		#  .        .
-		# 28------53
-		self.id_frite_locate_tip = [ [28, 27], [53, 26] ] # [left,left] then [right,right]
+		#self.under_id_frite_to_follow = [ [63, 38], [58, 54], [42, 37], [28, 53] ]  # left then right  [left, right], [left,right] ...
+		self.under_id_frite_to_follow = [ [63, 38], [64, 45], [42, 37], [23, 32] ]  # left then right  [left, right], [left,right] ...
 		
 		# array containing the upper mean point shifted by a normalized normal vector
 		self.position_mesh_to_follow = [None, None, None, None]
@@ -257,7 +264,7 @@ class PandaFriteEnv(gym.Env):
 		
 		
 		# For all id to follow except the TIP
-		for i in range(len(self.id_frite_to_follow)-1):
+		for i in range(len(self.id_frite_to_follow)):
 			
 			# get left and right upper points 
 			a_pt_left = np.array(data[1][self.id_frite_to_follow[i][0]])
@@ -279,59 +286,46 @@ class PandaFriteEnv(gym.Env):
 				a_normal_pt = self.shift_point_in_normal_direction(pt_left=a_pt_left_under, pt_right=a_pt_right_under, pt_mean=self.mean_position_to_follow[i], a_distance = 0.1)
 				self.draw_normal_plane(i, data, a_normal_pt)
 			
-		# Compute only for the TIP
-		# The real TIP  position is inside the "frite"
-		# mean tip between 28, 53 (front) and 27, 26 (back)
-		# 28 is front, 27 is back (left)
-		# 53 is front, 26 is back (right)
-		# mean between 28,53 and 27, 26
-		pt_left_1 = np.array(data[1][self.id_frite_locate_tip[0][0]])  # 28
-		pt_left_2 = np.array(data[1][self.id_frite_locate_tip[0][1]])  # 27
-		pt_mean_left = (pt_left_1 + pt_left_2) / 2.0  # point left inside 'frite'
-		
-		pt_right_1 = np.array(data[1][self.id_frite_locate_tip[1][0]]) # 53
-		pt_right_2 = np.array(data[1][self.id_frite_locate_tip[1][1]]) # 26
-		pt_mean_right = (pt_right_1 + pt_right_2) / 2.0 # point right inside 'frite'
-		
-		# Get the real position of the TIP from pybullet (inside the 'frite')
-		self.mean_position_to_follow[len(self.position_mesh_to_follow)-1] = p.getLinkState(self.panda_id, self.panda_end_eff_idx)[0]
-		
-		# 0.025 is equal to the half of the "frite" width
-		# 0.007 is equal to the half of the marker thickness
-		self.position_mesh_to_follow[len(self.position_mesh_to_follow)-1] = self.shift_point_in_normal_direction(pt_left=pt_mean_left, pt_right=pt_mean_right, pt_mean=self.mean_position_to_follow[len(self.position_mesh_to_follow)-1], a_distance = (0.007 + 0.025))
-		
-		if draw_normal:
-			a_normal_pt = self.shift_point_in_normal_direction(pt_left=pt_mean_left, pt_right=pt_mean_right, pt_mean=self.mean_position_to_follow[len(self.position_mesh_to_follow)-1], a_distance = 0.1)
-			self.draw_normal_plane(len(self.position_mesh_to_follow)-1, data, a_normal_pt)
-				
 	def draw_cross_mesh_to_follow(self):
 		for i in range(len(self.position_mesh_to_follow)):
 			self.debug_gui.draw_cross("mesh_frite_" + str(i) , a_pos = self.position_mesh_to_follow[i])
 			
 	def compute_height_id_frite(self):
-		#self.id_frite_to_follow = [15, 10, 14]
+		#self.id_frite_to_follow = [ [31, 15], [47, 33], [18, 14], [28, 53] ]
 		data = p.getMeshData(self.frite_id, -1, flags=p.MESH_DATA_SIMULATION_MESH)
 		pos_2 = data[1][2]
 		pos_15 = data[1][15]
+		pos_33 = data[1][33]
 		pos_10 = data[1][10]
 		pos_14 = data[1][14]
-		
-		pos_1 = data[1][1]
-		gripper_pos = p.getLinkState(self.panda_id, self.panda_end_eff_idx)[0]
-		
-		z_diff_1_gripper = pos_1[2] - gripper_pos[2]
+		pos_53 = data[1][53]
 		
 		
 		z_diff_2_15 = pos_2[2] - pos_15[2]
-		z_diff_15_10 = pos_15[2] - pos_10[2]
-		z_diff_10_14 = pos_10[2] - pos_14[2]
+		z_diff_2_33 = pos_2[2] - pos_33[2]
+		z_diff_2_10 = pos_2[2] - pos_10[2]
+		z_diff_2_14 = pos_2[2] - pos_14[2]
+		z_diff_2_53 = pos_2[2] - pos_53[2]
 		
 		self.debug_gui.draw_text("z_diff_2_15", a_text = "z_diff_2_15=" + str(z_diff_2_15), a_pos=[1,1,1])
-		self.debug_gui.draw_text("z_diff_15_10", a_text = "z_diff_15_10=" + str(z_diff_15_10), a_pos=[1,1,1.5])
-		self.debug_gui.draw_text("z_diff_10_14", a_text = "z_diff_10_14=" + str(z_diff_10_14), a_pos=[1,1,2.0])
+		self.debug_gui.draw_text("z_diff_2_33", a_text = "z_diff_2_33=" + str(z_diff_2_33), a_pos=[1,1,1.5])
+		self.debug_gui.draw_text("z_diff_2_10", a_text = "z_diff_2_10=" + str(z_diff_2_10), a_pos=[1,1,2.0])
+		self.debug_gui.draw_text("z_diff_2_14", a_text = "z_diff_2_14=" + str(z_diff_2_14), a_pos=[1,1,2.5])
+		self.debug_gui.draw_text("z_diff_2_53", a_text = "z_diff_2_53=" + str(z_diff_2_53), a_pos=[1,1,3.0])
 		
-		self.debug_gui.draw_text("z_diff_1_gripper", a_text = "z_diff_1_gripper=" + str(z_diff_1_gripper), a_pos=[1,1,2.5])
+		"""
+		z_diff_2_15 = pos_2[2] - pos_15[2]
+		z_diff_15_33 = pos_15[2] - pos_33[2]
+		z_diff_33_10 = pos_33[2] - pos_10[2]
+		z_diff_10_14 = pos_10[2] - pos_14[2]
+		z_diff_14_53 = pos_14[2] - pos_53[2]
 		
+		self.debug_gui.draw_text("z_diff_2_15", a_text = "z_diff_2_15=" + str(z_diff_2_15), a_pos=[1,1,1])
+		self.debug_gui.draw_text("z_diff_15_33", a_text = "z_diff_15_33=" + str(z_diff_15_33), a_pos=[1,1,1.5])
+		self.debug_gui.draw_text("z_diff_33_10", a_text = "z_diff_33_10=" + str(z_diff_33_10), a_pos=[1,1,2.0])
+		self.debug_gui.draw_text("z_diff_10_14", a_text = "z_diff_10_14=" + str(z_diff_10_14), a_pos=[1,1,2.5])
+		self.debug_gui.draw_text("z_diff_14_53", a_text = "z_diff_14_53=" + str(z_diff_14_53), a_pos=[1,1,3.0])
+		"""
 		
 		
 	def draw_all_ids_mesh_frite(self):

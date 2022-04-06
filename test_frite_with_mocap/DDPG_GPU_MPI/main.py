@@ -180,10 +180,12 @@ def main():
         env.draw_env_box()
         env.show_cartesian_sliders()
         env.draw_all_ids_mesh_frite()
+        env.compute_height_id_frite()
         while True:
             keys = p.getKeyboardEvents()
             
             env.apply_cartesian_sliders()
+            env.compute_mesh_pos_to_follow(draw_normal=True)
             #env.draw_gripper_position()
             #env.draw_id_to_follow()
             #env.draw_text_gripper_position()

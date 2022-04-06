@@ -37,7 +37,7 @@ class PandaFriteEnvROS(gym.Env):
 		# bullet paramters
 		#self.timeStep=1./240
 		self.timeStep = 0.0001
-		self.n_substeps = 20
+		self.n_substeps = 10
 		self.dt = self.timeStep*self.n_substeps
 		self.max_vel = 1
 		self.max_gripper_vel = 20
@@ -51,7 +51,13 @@ class PandaFriteEnvROS(gym.Env):
 		
 		
 		# Points (on the front side) from bottom to up
+		# [5, 2]
+		#   ||
+		#   vv
 		# [31, 15]
+		#   ||
+		#   vv
+		# [47, 33]
 		#   ||
 		#   vv
 		# [13, 10]
@@ -60,12 +66,21 @@ class PandaFriteEnvROS(gym.Env):
 		# [18, 14]
 		#   ||
 		#   vv
+		# [28, 53]
+		#   ||
+		#   vv
 		# [9, 6] (TIP)
-		self.id_frite_to_follow = [ [31, 15], [13, 10], [18, 14], [9, 6] ]  # left then right  [left, right], [left,right] ...
+		#self.id_frite_to_follow = [ [31, 15], [13, 10], [18, 14], [9, 6] ]  # left then right  [left, right], [left,right] ...
+		#self.id_frite_to_follow = [ [31, 15], [13, 10], [18, 14], [28, 53] ]  # left then right  [left, right], [left,right] ...
+		self.id_frite_to_follow = [ [31, 15], [47, 33], [18, 14], [28, 53] ]  # left then right  [left, right], [left,right] ...
 		
 		# Points from bottom to up, on the same plane of id_frite_to _follow, one level under ((on the front side)
 		# [63, 38] (under)
 		# [31, 15]
+		#   ||
+		#   vv
+		# [64, 45] (under)
+		# [47, 33]
 		#   ||
 		#   vv
 		# [58, 54] (under)
@@ -76,18 +91,12 @@ class PandaFriteEnvROS(gym.Env):
 		# [18, 14]
 		#   ||
 		#   vv
+		# [23, 32] (under)
 		# [28, 53] (under)
 		# [9, 6] (TIP)
-		self.under_id_frite_to_follow = [ [63, 38], [58, 54], [42, 37], [28, 53] ]  # left then right  [left, right], [left,right] ...
+		#self.under_id_frite_to_follow = [ [63, 38], [58, 54], [42, 37], [28, 53] ]  # left then right  [left, right], [left,right] ...
+		self.under_id_frite_to_follow = [ [63, 38], [64, 45], [42, 37], [23, 32] ]  # left then right  [left, right], [left,right] ...
 		
-		# mean tip between 28,53 (on front side) and 27, 26 (on back side)
-		# 28 is front, 27 is back
-		# 53 is front, 26 is back
-		#     27------26
-		#   .        .
-		#  .        .
-		# 28------53
-		self.id_frite_locate_tip = [ [28, 27], [53, 26] ] # [left,left] then [right,right]
 		
 		# array containing the upper mean point shifted by a normalized normal vector
 		self.position_mesh_to_follow = [None, None, None, None]
@@ -199,13 +208,16 @@ class PandaFriteEnvROS(gym.Env):
 		p.stepSimulation()
 	
 	
-	def transform_mocap_poses_to_arm_poses(self, mocap_poses):
+	def transform_mocap_poses_to_arm_poses(self, mocap_poses, orientation_base_frame_array):
 		
 		poses_meshes_in_arm_frame = np.array([[None, None, None, None],[None, None, None, None],[None, None, None, None],[None, None, None, None],[None, None, None, None]])
 		
 		pos_base_frame = mocap_poses[0]
-		orien_base_frame = np.array([-0.01293, -0.00056, 0.012016, 0.999843])
+		#orien_base_frame = np.array([orientation_base_frame_array[0], orientation_base_frame_array[1], orientation_base_frame_array[2], orientation_base_frame_array[3]])
 
+
+		orien_base_frame = np.array([0.000, 0.000, 0.000, 1.000])
+		#orien_base_frame = orientation_base_frame_array
 		matrix_base_frame_in_mocap_frame = self.to_rt_matrix_numpy(orien_base_frame, pos_base_frame)
 
 		matrix_mocap_frame_in_arm_frame = np.dot(self.matrix_base_frame_in_arm_frame, LA.inv(matrix_base_frame_in_mocap_frame))
@@ -222,11 +234,14 @@ class PandaFriteEnvROS(gym.Env):
 		self.open_database_mocap_in_read_mode()
 	
 		poses_mocap_array = np.zeros((5,3))
+		nbline = 0
 		 
 		for line in self.file_goal_mocap_poses.readlines():
+			#self.go_to_position_simulated(np.array([0.554, 0.000, 0.521]))
+			#time.sleep(3)
 			line_split = line.split()
 			
-			if (len(line_split) != 18):
+			if (len(line_split) != 22):
 				print("Erreur on line ", nbline)
 				
 			else:
@@ -236,34 +251,39 @@ class PandaFriteEnvROS(gym.Env):
 				print("goal x = {}, y = {}, z = {} ".format(goal_x, goal_y,goal_z))
 				goal_position = np.array([goal_x,goal_y,goal_z])
 				
-				input("go to goal position !")
+				#input("go to goal position !")
 				self.go_to_position_simulated(goal_position)
 				
-				for i in range(500):
+				for i in range(100):
 					p.stepSimulation()
 				
+				# Get orientation x,y,z,w
+				orientation_base_frame_array = np.array([float(line_split[3]),float(line_split[4]),float(line_split[5]),float(line_split[6])])
+				
 				for i in range(5):
-					x = float(line_split[((i+1)*3)+0])
-					y = float(line_split[((i+1)*3)+1])
-					z = float(line_split[((i+1)*3)+2])
+					x = float(line_split[((i+1)*3)+4])
+					y = float(line_split[((i+1)*3)+5])
+					z = float(line_split[((i+1)*3)+6])
 					poses_mocap_array[i][0] = x
 					poses_mocap_array[i][1] = y
 					poses_mocap_array[i][2] = z
 						
-				poses_mocap_array_in_arm_frame = self.transform_mocap_poses_to_arm_poses(poses_mocap_array)
+				poses_mocap_array_in_arm_frame = self.transform_mocap_poses_to_arm_poses(poses_mocap_array, orientation_base_frame_array)
 				#print(poses_mocap_array)
 				#print(poses_mocap_array_in_arm_frame)
 				
 				#time.sleep(4)
-				input("draw mesh and normal to follow !")
+				#input("draw mesh and normal to follow !")
 				
 				self.compute_mesh_pos_to_follow(draw_normal=True)
 				
-				input("draw mesh mocapin arm frame !")
+				#input("draw mesh mocapin arm frame !")
 				
 				for i in range(len(poses_mocap_array_in_arm_frame)):
 					self.debug_gui.draw_cross("mesh_mocap_" + str(i) , a_pos = [poses_mocap_array_in_arm_frame[i][0],poses_mocap_array_in_arm_frame[i][1],poses_mocap_array_in_arm_frame[i][2]])
-					
+				
+				nbline+=1
+				time.sleep(4)
 			
 		self.close_database_mocap()
 		
@@ -273,7 +293,7 @@ class PandaFriteEnvROS(gym.Env):
 		self.go_to_home_position()
 		input("Press Enter to start !")
 		
-		nb_goal_to_sample = 50
+		nb_goal_to_sample = 100
 		self.open_database_mocap()
 		
 		for i in range(nb_goal_to_sample):
@@ -289,8 +309,11 @@ class PandaFriteEnvROS(gym.Env):
 				copy_of_array_mocap_poses_base_frame = self.array_mocap_poses_base_frame.copy()
 			finally:
 				self.mutex_array_mocap.release()
-				
+			
+			
+			base_frame_pose = copy_of_array_mocap_poses_base_frame[0]	
 			self.file_goal_mocap_poses.write("{:.3f} {:.3f} {:.3f}".format(a_goal[0], a_goal[1], a_goal[2]))
+			self.file_goal_mocap_poses.write(" {:.3f} {:.3f} {:.3f} {:.3f}".format(base_frame_pose.orientation.x, base_frame_pose.orientation.y, base_frame_pose.orientation.z, base_frame_pose.orientation.w))
 			for a_pose in copy_of_array_mocap_poses_base_frame:
 				self.file_goal_mocap_poses.write(" {:.3f} {:.3f} {:.3f}".format(a_pose.position.x, a_pose.position.y, a_pose.position.z))
 			self.file_goal_mocap_poses.write("\n")
@@ -641,7 +664,7 @@ class PandaFriteEnvROS(gym.Env):
 		
 		
 		# For all id to follow except the TIP
-		for i in range(len(self.id_frite_to_follow)-1):
+		for i in range(len(self.id_frite_to_follow)):
 			
 			# get left and right upper points 
 			a_pt_left = np.array(data[1][self.id_frite_to_follow[i][0]])
@@ -662,60 +685,47 @@ class PandaFriteEnvROS(gym.Env):
 			if draw_normal:
 				a_normal_pt = self.shift_point_in_normal_direction(pt_left=a_pt_left_under, pt_right=a_pt_right_under, pt_mean=self.mean_position_to_follow[i], a_distance = 0.1)
 				self.draw_normal_plane(i, data, a_normal_pt)
-			
-		# Compute only for the TIP
-		# The real TIP  position is inside the "frite"
-		# mean tip between 28, 53 (front) and 27, 26 (back)
-		# 28 is front, 27 is back (left)
-		# 53 is front, 26 is back (right)
-		# mean between 28,53 and 27, 26
-		pt_left_1 = np.array(data[1][self.id_frite_locate_tip[0][0]])  # 28
-		pt_left_2 = np.array(data[1][self.id_frite_locate_tip[0][1]])  # 27
-		pt_mean_left = (pt_left_1 + pt_left_2) / 2.0  # point left inside 'frite'
-		
-		pt_right_1 = np.array(data[1][self.id_frite_locate_tip[1][0]]) # 53
-		pt_right_2 = np.array(data[1][self.id_frite_locate_tip[1][1]]) # 26
-		pt_mean_right = (pt_right_1 + pt_right_2) / 2.0 # point right inside 'frite'
-		
-		# Get the real position of the TIP from pybullet (inside the 'frite')
-		self.mean_position_to_follow[len(self.position_mesh_to_follow)-1] = p.getLinkState(self.panda_id, self.panda_end_eff_idx)[0]
-		
-		# 0.025 is equal to the half of the "frite" width
-		# 0.007 is equal to the half of the marker thickness
-		self.position_mesh_to_follow[len(self.position_mesh_to_follow)-1] = self.shift_point_in_normal_direction(pt_left=pt_mean_left, pt_right=pt_mean_right, pt_mean=self.mean_position_to_follow[len(self.position_mesh_to_follow)-1], a_distance = (0.007 + 0.025))
-		
-		if draw_normal:
-			a_normal_pt = self.shift_point_in_normal_direction(pt_left=pt_mean_left, pt_right=pt_mean_right, pt_mean=self.mean_position_to_follow[len(self.position_mesh_to_follow)-1], a_distance = 0.1)
-			self.draw_normal_plane(len(self.position_mesh_to_follow)-1, data, a_normal_pt)
 				
 	def draw_cross_mesh_to_follow(self):
 		for i in range(len(self.position_mesh_to_follow)):
 			self.debug_gui.draw_cross("mesh_frite_" + str(i) , a_pos = self.position_mesh_to_follow[i])
-			
+	
 	def compute_height_id_frite(self):
-		#self.id_frite_to_follow = [15, 10, 14]
+		#self.id_frite_to_follow = [ [31, 15], [47, 33], [18, 14], [28, 53] ]
 		data = p.getMeshData(self.frite_id, -1, flags=p.MESH_DATA_SIMULATION_MESH)
 		pos_2 = data[1][2]
 		pos_15 = data[1][15]
+		pos_33 = data[1][33]
 		pos_10 = data[1][10]
 		pos_14 = data[1][14]
-		
-		pos_1 = data[1][1]
-		gripper_pos = p.getLinkState(self.panda_id, self.panda_end_eff_idx)[0]
-		
-		z_diff_1_gripper = pos_1[2] - gripper_pos[2]
+		pos_53 = data[1][53]
 		
 		
 		z_diff_2_15 = pos_2[2] - pos_15[2]
-		z_diff_15_10 = pos_15[2] - pos_10[2]
-		z_diff_10_14 = pos_10[2] - pos_14[2]
+		z_diff_2_33 = pos_2[2] - pos_33[2]
+		z_diff_2_10 = pos_2[2] - pos_10[2]
+		z_diff_2_14 = pos_2[2] - pos_14[2]
+		z_diff_2_53 = pos_2[2] - pos_53[2]
 		
 		self.debug_gui.draw_text("z_diff_2_15", a_text = "z_diff_2_15=" + str(z_diff_2_15), a_pos=[1,1,1])
-		self.debug_gui.draw_text("z_diff_15_10", a_text = "z_diff_15_10=" + str(z_diff_15_10), a_pos=[1,1,1.5])
-		self.debug_gui.draw_text("z_diff_10_14", a_text = "z_diff_10_14=" + str(z_diff_10_14), a_pos=[1,1,2.0])
+		self.debug_gui.draw_text("z_diff_2_33", a_text = "z_diff_2_33=" + str(z_diff_2_33), a_pos=[1,1,1.5])
+		self.debug_gui.draw_text("z_diff_2_10", a_text = "z_diff_2_10=" + str(z_diff_2_10), a_pos=[1,1,2.0])
+		self.debug_gui.draw_text("z_diff_2_14", a_text = "z_diff_2_14=" + str(z_diff_2_14), a_pos=[1,1,2.5])
+		self.debug_gui.draw_text("z_diff_2_53", a_text = "z_diff_2_53=" + str(z_diff_2_53), a_pos=[1,1,3.0])
 		
-		self.debug_gui.draw_text("z_diff_1_gripper", a_text = "z_diff_1_gripper=" + str(z_diff_1_gripper), a_pos=[1,1,2.5])
+		"""
+		z_diff_2_15 = pos_2[2] - pos_15[2]
+		z_diff_15_33 = pos_15[2] - pos_33[2]
+		z_diff_33_10 = pos_33[2] - pos_10[2]
+		z_diff_10_14 = pos_10[2] - pos_14[2]
+		z_diff_14_53 = pos_14[2] - pos_53[2]
 		
+		self.debug_gui.draw_text("z_diff_2_15", a_text = "z_diff_2_15=" + str(z_diff_2_15), a_pos=[1,1,1])
+		self.debug_gui.draw_text("z_diff_15_33", a_text = "z_diff_15_33=" + str(z_diff_15_33), a_pos=[1,1,1.5])
+		self.debug_gui.draw_text("z_diff_33_10", a_text = "z_diff_33_10=" + str(z_diff_33_10), a_pos=[1,1,2.0])
+		self.debug_gui.draw_text("z_diff_10_14", a_text = "z_diff_10_14=" + str(z_diff_10_14), a_pos=[1,1,2.5])
+		self.debug_gui.draw_text("z_diff_14_53", a_text = "z_diff_14_53=" + str(z_diff_14_53), a_pos=[1,1,3.0])
+		"""
 		
 		
 	def draw_all_ids_mesh_frite(self):
@@ -836,7 +846,9 @@ class PandaFriteEnvROS(gym.Env):
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
 		"""
-		# EXTRA SMALL
+		
+		
+		# EXTRA EXTRA SMALL
 		low_marge = 0.1
 		low_x_down = panda_eff_state[0][0]-0.5*low_marge
 		low_x_up = panda_eff_state[0][0]+0.25*low_marge
@@ -849,6 +861,8 @@ class PandaFriteEnvROS(gym.Env):
 		z_low_marge = 0.10
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
+		
+		
 		"""
 		# EXTRA SMALL
 		low_marge = 0.1
@@ -1183,7 +1197,7 @@ class PandaFriteEnvROS(gym.Env):
 		#print("currentdir = {}".format(currentdir))
 		p.setAdditionalSearchPath(currentdir)
 		
-		p.setPhysicsEngineParameter(numSubSteps = self.n_substeps)
+		p.setPhysicsEngineParameter(numSolverIterations=150, numSubSteps = self.n_substeps)
 		p.setTimeStep(self.timeStep)
 
 		# Set Gravity to the environment
