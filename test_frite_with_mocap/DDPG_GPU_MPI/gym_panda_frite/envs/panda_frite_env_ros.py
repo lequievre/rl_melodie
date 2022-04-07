@@ -37,7 +37,7 @@ class PandaFriteEnvROS(gym.Env):
 		# bullet paramters
 		#self.timeStep=1./240
 		self.timeStep = 0.0001
-		self.n_substeps = 10
+		self.n_substeps = 20
 		self.dt = self.timeStep*self.n_substeps
 		self.max_vel = 1
 		self.max_gripper_vel = 20
@@ -71,8 +71,8 @@ class PandaFriteEnvROS(gym.Env):
 		#   vv
 		# [9, 6] (TIP)
 		#self.id_frite_to_follow = [ [31, 15], [13, 10], [18, 14], [9, 6] ]  # left then right  [left, right], [left,right] ...
-		#self.id_frite_to_follow = [ [31, 15], [13, 10], [18, 14], [28, 53] ]  # left then right  [left, right], [left,right] ...
-		self.id_frite_to_follow = [ [31, 15], [47, 33], [18, 14], [28, 53] ]  # left then right  [left, right], [left,right] ...
+		self.id_frite_to_follow = [ [31, 15], [13, 10], [18, 14], [28, 53] ]  # left then right  [left, right], [left,right] ...
+		#self.id_frite_to_follow = [ [31, 15], [47, 33], [18, 14], [28, 53] ]  # left then right  [left, right], [left,right] ...
 		
 		# Points from bottom to up, on the same plane of id_frite_to _follow, one level under ((on the front side)
 		# [63, 38] (under)
@@ -94,8 +94,8 @@ class PandaFriteEnvROS(gym.Env):
 		# [23, 32] (under)
 		# [28, 53] (under)
 		# [9, 6] (TIP)
-		#self.under_id_frite_to_follow = [ [63, 38], [58, 54], [42, 37], [28, 53] ]  # left then right  [left, right], [left,right] ...
-		self.under_id_frite_to_follow = [ [63, 38], [64, 45], [42, 37], [23, 32] ]  # left then right  [left, right], [left,right] ...
+		self.under_id_frite_to_follow = [ [63, 38], [58, 54], [42, 37], [28, 53] ]  # left then right  [left, right], [left,right] ...
+		#self.under_id_frite_to_follow = [ [63, 38], [64, 45], [42, 37], [23, 32] ]  # left then right  [left, right], [left,right] ...
 		
 		
 		# array containing the upper mean point shifted by a normalized normal vector
@@ -216,8 +216,8 @@ class PandaFriteEnvROS(gym.Env):
 		#orien_base_frame = np.array([orientation_base_frame_array[0], orientation_base_frame_array[1], orientation_base_frame_array[2], orientation_base_frame_array[3]])
 
 
-		orien_base_frame = np.array([0.000, 0.000, 0.000, 1.000])
-		#orien_base_frame = orientation_base_frame_array
+		#orien_base_frame = np.array([0.000, 0.000, 0.000, 1.000])
+		orien_base_frame = orientation_base_frame_array
 		matrix_base_frame_in_mocap_frame = self.to_rt_matrix_numpy(orien_base_frame, pos_base_frame)
 
 		matrix_mocap_frame_in_arm_frame = np.dot(self.matrix_base_frame_in_arm_frame, LA.inv(matrix_base_frame_in_mocap_frame))
@@ -251,11 +251,15 @@ class PandaFriteEnvROS(gym.Env):
 				print("goal x = {}, y = {}, z = {} ".format(goal_x, goal_y,goal_z))
 				goal_position = np.array([goal_x,goal_y,goal_z])
 				
-				#input("go to goal position !")
+				input("go to goal position !")
 				self.go_to_position_simulated(goal_position)
 				
-				for i in range(100):
+				for i in range(1000):
 					p.stepSimulation()
+				
+				
+				gripper_pos = p.getLinkState(self.panda_id, self.panda_end_eff_idx)[0]
+				print("gripper pos =", gripper_pos)
 				
 				# Get orientation x,y,z,w
 				orientation_base_frame_array = np.array([float(line_split[3]),float(line_split[4]),float(line_split[5]),float(line_split[6])])
@@ -273,17 +277,17 @@ class PandaFriteEnvROS(gym.Env):
 				#print(poses_mocap_array_in_arm_frame)
 				
 				#time.sleep(4)
-				#input("draw mesh and normal to follow !")
+				input("draw mesh and normal to follow !")
 				
 				self.compute_mesh_pos_to_follow(draw_normal=True)
 				
-				#input("draw mesh mocapin arm frame !")
+				input("draw mesh mocapin arm frame !")
 				
 				for i in range(len(poses_mocap_array_in_arm_frame)):
 					self.debug_gui.draw_cross("mesh_mocap_" + str(i) , a_pos = [poses_mocap_array_in_arm_frame[i][0],poses_mocap_array_in_arm_frame[i][1],poses_mocap_array_in_arm_frame[i][2]])
 				
 				nbline+=1
-				time.sleep(4)
+				#time.sleep(4)
 			
 		self.close_database_mocap()
 		
@@ -302,7 +306,7 @@ class PandaFriteEnvROS(gym.Env):
 			self.go_to_position(a_goal)
 			
 			# wait a time to reach the 'goal' position
-			time.sleep(4)
+			time.sleep(10)
 			
 			self.mutex_array_mocap.acquire()
 			try:
@@ -968,7 +972,15 @@ class PandaFriteEnvROS(gym.Env):
 		frite_up_pos = [gripper_pos[0], gripper_pos[1], frite_z_position + 1.03]
 		self.debug_gui.draw_cross("frite_up" , a_pos = frite_up_pos)
 		"""
-		E = 25*pow(10,6)
+		
+		# plage E -> 0.1 à 40
+		# frite blanche :
+		# E = 0.1*pow(10,6)  NU = 0.49
+		
+		# frite noire :
+		# E = 40*pow(10,6)  NU = 0.49
+		
+		E = 40*pow(10,6)
 		NU = 0.49
 		(a_lambda,a_mu) = self.conv_module_d_young_to_lame(E,NU)
 		
@@ -1197,7 +1209,8 @@ class PandaFriteEnvROS(gym.Env):
 		#print("currentdir = {}".format(currentdir))
 		p.setAdditionalSearchPath(currentdir)
 		
-		p.setPhysicsEngineParameter(numSolverIterations=150, numSubSteps = self.n_substeps)
+		#p.setPhysicsEngineParameter(numSolverIterations=150, numSubSteps = self.n_substeps)
+		p.setPhysicsEngineParameter(numSubSteps = self.n_substeps)
 		p.setTimeStep(self.timeStep)
 
 		# Set Gravity to the environment
