@@ -15,14 +15,16 @@ from gym_panda_frite.envs.debug_gui import Debug_Gui
 
 class PandaFriteEnv(gym.Env):
 	
-	def __init__(self, database = None, distance_threshold = None, gui = None):
+	def __init__(self, database = None, distance_threshold = None, gui = None, E = None):
 		
 		self.database = database
 		self.debug_lines_gripper_array = [0, 0, 0, 0]
+		self.E = E
 		
 		# bullet paramters
 		#self.timeStep=1./240
-		self.timeStep = 0.003
+		#self.timeStep = 0.003
+		self.timeStep = 0.0001
 		self.n_substeps = 20
 		self.dt = self.timeStep*self.n_substeps
 		self.max_vel = 1
@@ -521,9 +523,6 @@ class PandaFriteEnv(gym.Env):
 			print("child link name={0}, pos={1}, orien={2}".format(child_link_name,link_pos_in_parent_frame,link_orien_in_parent_frame))
 		print("=================================")
 
-
-	
-		
 	def load_frite(self):
 		gripper_pos = p.getLinkState(self.panda_id, self.panda_end_eff_idx)[0]
 		self.frite_startOrientation = p.getQuaternionFromEuler([0,0,math.pi/4])
@@ -539,11 +538,21 @@ class PandaFriteEnv(gym.Env):
 		self.debug_gui.draw_cross("frite_up" , a_pos = frite_up_pos)
 		"""
 		
+		# plage E -> 0.1 à 40
+		# frite blanche :
+		# E = 0.1*pow(10,6)  NU = 0.49
+		
+		# frite noire :
+		# E = 40*pow(10,6)  NU = 0.49
+		
+		E = self.E*pow(10,6)
+		NU = 0.49
+		(a_lambda,a_mu) = self.conv_module_d_young_to_lame(E,NU)
+		
 		# frite : 103 cm with 0.1 cell size
-		self.frite_id = p.loadSoftBody("vtk/frite.vtk", basePosition = self.frite_startPos, baseOrientation=self.frite_startOrientation, mass = 0.2, useNeoHookean = 1, NeoHookeanMu = 961500, NeoHookeanLambda = 1442300, NeoHookeanDamping = 0.01, useSelfCollision = 1, collisionMargin = 0.001, frictionCoeff = 0.5, scale=1.0)
+		self.frite_id = p.loadSoftBody("vtk/frite.vtk", basePosition = self.frite_startPos, baseOrientation=self.frite_startOrientation, mass = 0.2, useNeoHookean = 1, NeoHookeanMu = a_mu, NeoHookeanLambda = a_lambda, NeoHookeanDamping = 0.01, useSelfCollision = 1, collisionMargin = 0.001, frictionCoeff = 0.5, scale=1.0)
 		#p.changeVisualShape(self.frite_id, -1, flags=p.VISUAL_SHAPE_DOUBLE_SIDED)
 			
-
 	def load_plane(self):
 		self.plane_height = -0.85
 		self.plane_id = p.loadURDF("urdf/plane.urdf", basePosition=[0,0,self.plane_height], useFixedBase=True)
@@ -556,7 +565,7 @@ class PandaFriteEnv(gym.Env):
 		self.cube_startPos = [gripper_pos[0], gripper_pos[1], cube_z_position]
 		self.cube_id = p.loadURDF("urdf/my_cube.urdf", self.cube_startPos, useFixedBase=True)
 		
-
+	
 	def load_panda(self):
 		self.panda_startOrientation = p.getQuaternionFromEuler([0,0,0])
 		# load panda
@@ -688,8 +697,10 @@ class PandaFriteEnv(gym.Env):
 		jointPoses = p.calculateInverseKinematics(self.panda_id, self.panda_end_eff_idx, new_pos, cur_orien)[0:7]
 		
 		for i in range(len(jointPoses)):
-			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=10 * 240.)
-	
+			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=100 * 240.)
+		
+		for i in range(1000):
+					p.stepSimulation()
 	
 	def get_obs(self):
 		eff_link_state = p.getLinkState(self.panda_id, self.panda_end_eff_idx, computeLinkVelocity=1)

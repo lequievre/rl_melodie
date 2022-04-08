@@ -27,12 +27,14 @@ from gym_panda_frite.envs.debug_gui import Debug_Gui
 
 class PandaFriteEnvROS(gym.Env):
 	
-	def __init__(self, database = None, distance_threshold = None, gui = None):
+	def __init__(self, database = None, distance_threshold = None, gui = None, E = None):
 		
 		print("****** ROSSSSSSSSSS !!!! ************")
 		
 		self.database = database
 		self.debug_lines_gripper_array = [0, 0, 0, 0]
+		
+		self.E = E
 		
 		# bullet paramters
 		#self.timeStep=1./240
@@ -205,7 +207,8 @@ class PandaFriteEnvROS(gym.Env):
 			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=100 * 240.)
 			p.stepSimulation()
 			
-		p.stepSimulation()
+		for i in range(1000):
+					p.stepSimulation()
 	
 	
 	def transform_mocap_poses_to_arm_poses(self, mocap_poses, orientation_base_frame_array):
@@ -253,9 +256,6 @@ class PandaFriteEnvROS(gym.Env):
 				
 				input("go to goal position !")
 				self.go_to_position_simulated(goal_position)
-				
-				for i in range(1000):
-					p.stepSimulation()
 				
 				
 				gripper_pos = p.getLinkState(self.panda_id, self.panda_end_eff_idx)[0]
@@ -980,7 +980,7 @@ class PandaFriteEnvROS(gym.Env):
 		# frite noire :
 		# E = 40*pow(10,6)  NU = 0.49
 		
-		E = 40*pow(10,6)
+		E = self.E*pow(10,6)
 		NU = 0.49
 		(a_lambda,a_mu) = self.conv_module_d_young_to_lame(E,NU)
 		

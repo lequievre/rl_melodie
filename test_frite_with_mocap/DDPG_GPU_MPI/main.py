@@ -49,6 +49,7 @@ parser.add_argument('--load_db_dir_name', default='/default_load/', type=str)
 parser.add_argument('--db_nb_x', default=8, type=int)
 parser.add_argument('--db_nb_y', default=22, type=int)
 parser.add_argument('--db_nb_z', default=10, type=int)
+parser.add_argument('--E', default=40, type=int)
 parser.add_argument('--gui', default=False, type=bool) # use cuda
 
 
@@ -80,7 +81,7 @@ def main():
            return        
 	
     db = Database_Frite(path_load=load_path_databases, load_name=args.load_database_name, generate_name=args.generate_database_name, path_generate=generate_path_databases, nb_x=args.db_nb_x, nb_y=args.db_nb_y, nb_z=args.db_nb_z)
-    env = gym.make(args.env_name, database=db, distance_threshold=args.distance_threshold, gui=args.gui)
+    env = gym.make(args.env_name, database=db, distance_threshold=args.distance_threshold, gui=args.gui, E=args.E)
     
     env.seed(args.random_seed + MPI.COMM_WORLD.Get_rank())
     torch.manual_seed(args.random_seed + MPI.COMM_WORLD.Get_rank())
