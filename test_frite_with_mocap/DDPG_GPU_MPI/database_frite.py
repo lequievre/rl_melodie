@@ -5,12 +5,14 @@ from numpy import random
 import math
 
 class Database_Frite:
-	def __init__(self, path_load, load_name, path_generate, generate_name, nb_x=10, nb_y=30, nb_z=10):
+	def __init__(self, path_load, load_name, path_generate, generate_name, nb_x=10, nb_y=30, nb_z=10, db_nb_random_goal=250, use_random_db=True):
 		
 		self.load_name = load_name
 		self.generate_name = generate_name
 		self.path_load = path_load
 		self.path_generate = path_generate
+		self.db_nb_random_goal = db_nb_random_goal
+		self.use_random_db = use_random_db
 		
 		self.nb_x = nb_x
 		self.nb_y = nb_y
@@ -33,17 +35,22 @@ class Database_Frite:
 	def print_config(self):
 		self.init_spaces()
 		
-		d_x = self.goal_high[0] - self.goal_low[0]
-		d_y = self.goal_high[1] - self.goal_low[1]
-		d_z = self.goal_high[2] - self.goal_low[2]
-		
-		print("****** CONFIG DATABASE ***************")
-		print("nb_x={}, nb_y={}, nb_z={}".format(self.nb_x,self.nb_y,self.nb_z))
-		print("d_x={}, d_y={}, d_z={}".format(d_x,d_y,d_z))
-		print("step_x={}, step_y={}, step_z={}".format(self.step_x,self.step_y,self.step_z))
-		print("range_x={}, range_y={}, range_z={}".format(self.range_x,self.range_y,self.range_z))
-		print("delta_x={}, delta_y={}".format(self.delta_x,self.delta_y))
-		print("**************************************")
+		if self.use_random_db:
+			print("RANDOM DB !")
+			print("db_nb_random_goal = {}".format(self.db_nb_random_goal))
+		else:
+			print("CLASSIC DB !")
+			d_x = self.goal_high[0] - self.goal_low[0]
+			d_y = self.goal_high[1] - self.goal_low[1]
+			d_z = self.goal_high[2] - self.goal_low[2]
+			
+			print("****** CONFIG DATABASE ***************")
+			print("nb_x={}, nb_y={}, nb_z={}".format(self.nb_x,self.nb_y,self.nb_z))
+			print("d_x={}, d_y={}, d_z={}".format(d_x,d_y,d_z))
+			print("step_x={}, step_y={}, step_z={}".format(self.step_x,self.step_y,self.step_z))
+			print("range_x={}, range_y={}, range_z={}".format(self.range_x,self.range_y,self.range_z))
+			print("delta_x={}, delta_y={}".format(self.delta_x,self.delta_y))
+			print("**************************************")
 		
 		
 	
@@ -116,6 +123,33 @@ class Database_Frite:
 			return None
 	
 	def load(self):
+		if self.use_random_db:
+			self.load_random()
+		else:
+			self.load_classic()
+	
+	def load_random(self):
+		f = open(self.path_load + self.load_name)
+		total_list = []
+		for line in f.readlines():
+			self.nb_lines+=1
+			line_split = line.split()
+			# 0 = X mean, 1 = Y mean, 2 = Z mean
+			total_list.append(float(line_split[3])) #x shifted
+			total_list.append(float(line_split[4])) #y shifted
+			total_list.append(float(line_split[5]))	#z shifted
+
+		
+		self.nb_deformations = int(self.nb_lines/self.nb_points)
+		
+		print("nb lines = {}, nb points = {}, nb_deformations = {}".format(self.nb_lines, self.nb_points,self.nb_deformations))
+		self.data = np.array(total_list).reshape(self.nb_deformations, self.nb_points, 3)
+		
+		
+		print("shape = {}".format(self.data.shape))	
+		print(self.data[0,0])
+		
+	def load_classic(self):
 		f = open(self.path_load + self.load_name)
 		total_list = []
 		for line in f.readlines():
@@ -157,8 +191,37 @@ class Database_Frite:
 			self.env.set_action_cartesian(d_x_y_z)
 			p.stepSimulation()
 
-	
+
 	def generate(self):
+		if self.use_random_db:
+			self.generate_random()
+		else:
+			self.generate_classic()
+			
+	def generate_random(self):
+		print("->Open database file : ", self.path_generate + self.generate_name , " !")
+		f = open(self.path_generate + self.generate_name, "w+")
+		
+		for i in range(self.db_nb_random_goal):
+			# get a random goal = numpy array [x,y,z]
+			a_random_goal = self.env.sample_goal_random()
+			print("-> {} : Go to GOAL : {} !".format(i,a_random_goal))
+			self.env.go_to_position_simulated(a_random_goal)
+			print("-> Goal OK !")
+			print("->Compute mesh pos to follow !")
+			self.env.compute_mesh_pos_to_follow(draw_normal=True)
+			#input("Press Enter to continue !")
+			print("->Write pos into database file !")
+			#print(self.env.mean_position_to_follow)
+			#print(self.env.position_mesh_to_follow)
+			
+			for k in range(len(self.env.position_mesh_to_follow)):
+				f.write("{:.3f} {:.3f} {:.3f} {:.3f} {:.3f} {:.3f}\n".format(self.env.mean_position_to_follow[k][0], self.env.mean_position_to_follow[k][1], self.env.mean_position_to_follow[k][2], self.env.position_mesh_to_follow[k][0],  self.env.position_mesh_to_follow[k][1], self.env.position_mesh_to_follow[k][2]))
+
+		print("->Close file !")
+		f.close()
+			
+	def generate_classic(self):
 		self.init_spaces()
 		self.go_to_corner()
 		f = open(self.path_generate + self.generate_name, "w+")

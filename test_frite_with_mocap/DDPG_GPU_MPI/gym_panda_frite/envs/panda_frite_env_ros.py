@@ -207,7 +207,7 @@ class PandaFriteEnvROS(gym.Env):
 			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=100 * 240.)
 			p.stepSimulation()
 			
-		for i in range(1000):
+		for i in range(3000):
 					p.stepSimulation()
 	
 	

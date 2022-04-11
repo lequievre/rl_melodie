@@ -9,6 +9,8 @@ import pybullet_data as pd
 import math
 from numpy import linalg as LA
 
+from datetime import datetime
+
 
 
 from gym_panda_frite.envs.debug_gui import Debug_Gui
@@ -395,10 +397,13 @@ class PandaFriteEnv(gym.Env):
 		cur_pos = np.array(cur_state[0])
 		self.debug_gui.draw_cross("gripper", a_pos = cur_pos, a_color = [0, 0, 1])
 	
+	def sample_goal_random(self):
+		# sample a goal np.array[x,v,z] from the goal_space 
+		goal = np.array(self.goal_space.sample())
+		return goal.copy()
 	
 	def sample_goal(self):
 		return self.database.get_random_targets()
-	
 	
 	def show_cartesian_sliders(self):
 		self.list_slider_cartesian = []
@@ -420,7 +425,7 @@ class PandaFriteEnv(gym.Env):
 	
 	def set_gym_spaces(self):
 		panda_eff_state = p.getLinkState(self.panda_id, self.panda_end_eff_idx)
-		
+		"""
 		# MEDIUM
 		low_marge = 0.1
 		low_x_down = panda_eff_state[0][0]-1.5*low_marge
@@ -433,7 +438,7 @@ class PandaFriteEnv(gym.Env):
 		z_low_marge = 0.3
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
-		
+		"""
 		"""
 		# SMALL
 		low_marge = 0.1
@@ -445,6 +450,38 @@ class PandaFriteEnv(gym.Env):
 		
 		
 		z_low_marge = 0.25
+		low_z_down = panda_eff_state[0][2]-z_low_marge
+		low_z_up = panda_eff_state[0][2]
+		"""
+		
+		
+		# EXTRA EXTRA SMALL
+		low_marge = 0.1
+		low_x_down = panda_eff_state[0][0]-0.5*low_marge
+		low_x_up = panda_eff_state[0][0]+0.25*low_marge
+		
+		low_y_down = panda_eff_state[0][1]-1.5*low_marge
+		low_y_up = panda_eff_state[0][1]+1.5*low_marge
+		
+		
+		z_low_marge = 0.25
+		#z_low_marge = 0.10
+		low_z_down = panda_eff_state[0][2]-z_low_marge
+		low_z_up = panda_eff_state[0][2]
+		
+		
+		"""
+		# EXTRA SMALL
+		low_marge = 0.1
+		low_x_down = panda_eff_state[0][0]-1.0*low_marge
+		low_x_up = panda_eff_state[0][0]+0.5*low_marge
+		
+		low_y_down = panda_eff_state[0][1]-2.5*low_marge
+		low_y_up = panda_eff_state[0][1]+2.5*low_marge
+		
+		
+		#z_low_marge = 0.25
+		z_low_marge = 0.10
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
 		"""
@@ -523,6 +560,13 @@ class PandaFriteEnv(gym.Env):
 			print("child link name={0}, pos={1}, orien={2}".format(child_link_name,link_pos_in_parent_frame,link_orien_in_parent_frame))
 		print("=================================")
 
+
+	def conv_module_d_young_to_lame(self, E, NU):
+		a_lambda = (E * NU)/((1+NU)*(1-2*NU))
+		a_mu = E/(2*(1+NU))
+		
+		return (a_lambda,a_mu)
+		
 	def load_frite(self):
 		gripper_pos = p.getLinkState(self.panda_id, self.panda_end_eff_idx)[0]
 		self.frite_startOrientation = p.getQuaternionFromEuler([0,0,math.pi/4])
@@ -669,8 +713,41 @@ class PandaFriteEnv(gym.Env):
 		new_pos_11  = [pos_11[0]+0.025, pos_11[1]+0.01, pos_11[2]-0.02]"""
 		p.createSoftBodyAnchor(self.frite_id, 6, self.panda_id , 10, [0.025,-0.01,-0.02])
 		p.createSoftBodyAnchor(self.frite_id, 9, self.panda_id , 11, [0.025,0.01,-0.02])
+	
+	
+	def go_to_position_simulated(self, a_position):
 		
+		cur_state = p.getLinkState(self.panda_id, self.panda_end_eff_idx)
+		cur_pos = np.array(cur_state[0])
+		cur_orien = np.array(cur_state[1])
 		
+		new_pos = a_position
+		jointPoses = p.calculateInverseKinematics(self.panda_id, self.panda_end_eff_idx, new_pos, cur_orien)[0:7]
+		
+		for i in range(len(jointPoses)):
+			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=100 * 240.)
+			p.stepSimulation()
+		
+			
+		for i in range(100):
+					p.stepSimulation()
+		
+		"""	
+		start=datetime.now()
+		
+		while True:
+			p.stepSimulation()
+			cur_state = p.getLinkState(self.panda_id, self.panda_end_eff_idx)
+			cur_pos = np.array(cur_state[0])
+		
+			if np.linalg.norm(cur_pos - new_pos, axis=-1) <= 0.03:
+				print("Exit with precision !")
+				break
+			
+			if (datetime.now()-start).total_seconds() >= 60:
+				print("Exit with time !")
+				break
+		"""
 	def set_action_cartesian(self, action):
 		cur_state = p.getLinkState(self.panda_id, self.panda_end_eff_idx)
 		cur_pos = np.array(cur_state[0])
@@ -681,7 +758,7 @@ class PandaFriteEnv(gym.Env):
 		jointPoses = p.calculateInverseKinematics(self.panda_id, self.panda_end_eff_idx, new_pos, cur_orien)[0:7]
 		
 		for i in range(len(jointPoses)):
-			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=10 * 240.)
+			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=100 * 240.)
 			
 		
 	def set_action(self, action):
@@ -768,6 +845,8 @@ class PandaFriteEnv(gym.Env):
 		
 		# reset pybullet to deformable object
 		p.resetSimulation(p.RESET_USE_DEFORMABLE_WORLD)
+		
+		#p.setRealTimeSimulation(1)
 
 		# bullet setup
 		# add pybullet path
