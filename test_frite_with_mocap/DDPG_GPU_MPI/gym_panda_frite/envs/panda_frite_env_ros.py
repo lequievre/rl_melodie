@@ -40,7 +40,7 @@ class PandaFriteEnvROS(gym.Env):
 		# bullet env parameters + thread time_step
 		self.env_pybullet = env_pybullet
 		
-		self.dt = self.env_pybullet.time_step*self.env_pybullet.n_substeps
+		self.dt = self.env_pybullet.time_step*self.env_pybullet.n_substeps*10
 		self.max_vel = 1
 		self.max_gripper_vel = 20
 		
@@ -883,6 +883,7 @@ class PandaFriteEnvROS(gym.Env):
 		self.goal_space = spaces.Box(low=np.array([low_x_down, low_y_down ,low_z_down]), high=np.array([low_x_up, low_y_up ,low_z_up]))
 		#print("frite env goal space = {}".format(self.goal_space))
 		
+		"""
 		low_marge = 0.1
 		low_x_down = panda_eff_state[0][0]-2*low_marge
 		low_x_up = panda_eff_state[0][0]+low_marge
@@ -891,6 +892,21 @@ class PandaFriteEnvROS(gym.Env):
 		low_y_up = panda_eff_state[0][1]+5*low_marge
 
 		z_low_marge = 0.3
+		low_z_down = panda_eff_state[0][2]-z_low_marge
+		low_z_up = panda_eff_state[0][2]
+		"""
+		
+		# POSE EXTRA SMALL
+		low_marge = 0.1
+		low_x_down = panda_eff_state[0][0]-1.0*low_marge
+		low_x_up = panda_eff_state[0][0]+0.5*low_marge
+		
+		low_y_down = panda_eff_state[0][1]-2.5*low_marge
+		low_y_up = panda_eff_state[0][1]+2.5*low_marge
+		
+		
+		z_low_marge = 0.25
+		#z_low_marge = 0.10
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
 		

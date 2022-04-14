@@ -97,6 +97,7 @@ def main():
     
 	env.init_ros()
 	#env.generate_mocap_databases()
+	env.draw_env_box()
 	env.load_database_mocap()
 	#db.generate()
 	

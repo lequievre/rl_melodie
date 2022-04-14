@@ -143,6 +143,7 @@ def main():
 		for episode in range(args.max_episode):
 			#print("** rank {}, episode {}".format(rank,episode))
 			state = env.reset()
+			env.draw_env_box()
 			noise.reset()
 			episode_reward = 0
 			for step in range(args.max_step):
