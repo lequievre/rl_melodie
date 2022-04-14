@@ -21,6 +21,8 @@ import pybullet as p
 import gym_panda_frite
 from database_frite import Database_Frite
 
+from gym_panda_frite.envs.environment import Environment
+
 parser = argparse.ArgumentParser()
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode', default='train', type=str) # mode = 'train' or 'test' or 'debug_cartesian' or 'debug_articular'
@@ -43,8 +45,12 @@ parser.add_argument('--load_db_dir_name', default='/default_load/', type=str)
 parser.add_argument('--db_nb_x', default=8, type=int)
 parser.add_argument('--db_nb_y', default=22, type=int)
 parser.add_argument('--db_nb_z', default=10, type=int)
+parser.add_argument('--db_nb_random_goal', default=250, type=int)
 parser.add_argument('--E', default=40, type=int)
 parser.add_argument('--gui', default=False, type=bool) # use cuda
+parser.add_argument('--use_random_db', default=True, type=bool) # use random db
+parser.add_argument('--time_step', default=0.001, type=float)
+
 
 args = parser.parse_args()
 
@@ -73,8 +79,11 @@ def main():
 		   raise RuntimeError("=> Database file to load does not exit : " + load_path_databases + args.load_database_name)
 		   return        
 
-	db = Database_Frite(path_load=load_path_databases, load_name=args.load_database_name, generate_name=args.generate_database_name, path_generate=generate_path_databases, nb_x=args.db_nb_x, nb_y=args.db_nb_y, nb_z=args.db_nb_z)
-	env = gym.make(args.env_name, database=db, distance_threshold=args.distance_threshold, gui=args.gui, E=args.E)
+
+	env_pybullet = Environment(time_step=args.time_step, gui=args.gui)
+	env_pybullet.reset()
+	db = Database_Frite(path_load=load_path_databases, load_name=args.load_database_name, generate_name=args.generate_database_name, path_generate=generate_path_databases, nb_x=args.db_nb_x, nb_y=args.db_nb_y, nb_z=args.db_nb_z, db_nb_random_goal=args.db_nb_random_goal, use_random_db=args.use_random_db)
+	env = gym.make(args.env_name, database=db, distance_threshold=args.distance_threshold, gui=args.gui, E=args.E, env_pybullet=env_pybullet)
 
 	env.seed(args.random_seed + MPI.COMM_WORLD.Get_rank())
 	torch.manual_seed(args.random_seed + MPI.COMM_WORLD.Get_rank())
@@ -89,6 +98,7 @@ def main():
 	env.init_ros()
 	#env.generate_mocap_databases()
 	env.load_database_mocap()
+	#db.generate()
 	
 	input("Press Enter to stop !")
 

@@ -60,8 +60,8 @@ class PandaFriteEnv(gym.Env):
 		#   ||
 		#   vv
 		# [9, 6] (TIP)
-		#self.id_frite_to_follow = [ [31, 15], [13, 10], [18, 14], [9, 6] ]  # left then right  [left, right], [left,right] ...
-		self.id_frite_to_follow = [ [31, 15], [47, 33], [18, 14], [28, 53] ]  # left then right  [left, right], [left,right] ...
+		self.id_frite_to_follow = [ [31, 15], [13, 10], [18, 14], [28, 53] ]  # left then right  [left, right], [left,right] ...
+		#self.id_frite_to_follow = [ [31, 15], [47, 33], [18, 14], [28, 53] ]  # left then right  [left, right], [left,right] ...
 		
 		# Points from bottom to up, on the same plane of id_frite_to _follow, one level under ((on the front side)
 		# [63, 38] (under)
@@ -83,8 +83,8 @@ class PandaFriteEnv(gym.Env):
 		# [23, 32] (under)
 		# [28, 53] (under)
 		# [9, 6] (TIP)
-		#self.under_id_frite_to_follow = [ [63, 38], [58, 54], [42, 37], [28, 53] ]  # left then right  [left, right], [left,right] ...
-		self.under_id_frite_to_follow = [ [63, 38], [64, 45], [42, 37], [23, 32] ]  # left then right  [left, right], [left,right] ...
+		self.under_id_frite_to_follow = [ [63, 38], [58, 54], [42, 37], [23, 32] ]  # left then right  [left, right], [left,right] ...
+		#self.under_id_frite_to_follow = [ [63, 38], [64, 45], [42, 37], [23, 32] ]  # left then right  [left, right], [left,right] ...
 		
 		# array containing the upper mean point shifted by a normalized normal vector
 		self.position_mesh_to_follow = [None, None, None, None]
@@ -288,6 +288,7 @@ class PandaFriteEnv(gym.Env):
 			
 			if draw_normal:
 				a_normal_pt = self.shift_point_in_normal_direction(pt_left=a_pt_left_under, pt_right=a_pt_right_under, pt_mean=self.mean_position_to_follow[i], a_distance = 0.1)
+				print("id={}, normal={}".format(self.id_frite_to_follow[i][0],a_normal_pt))
 				self.draw_normal_plane(i, data, a_normal_pt)
 			
 	def draw_cross_mesh_to_follow(self):
@@ -464,8 +465,8 @@ class PandaFriteEnv(gym.Env):
 		low_y_up = panda_eff_state[0][1]+1.5*low_marge
 		
 		
-		z_low_marge = 0.25
-		#z_low_marge = 0.10
+		#z_low_marge = 0.25
+		z_low_marge = 0.10
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
 		
@@ -707,13 +708,30 @@ class PandaFriteEnv(gym.Env):
 		
 		# panda finger joint 1 = 10
 		# panda finger joint 2 = 11
-		"""pos_10 = p.getLinkState(self.panda_id, 10)[0]
-		new_pos_10  = [pos_10[0]+0.025, pos_10[1]-0.01, pos_10[2]-0.02]
+		
+		"""
+		pos_10 = p.getLinkState(self.panda_id, 10)[0]
+		new_pos_10  = [pos_10[0]+0.025, pos_10[1]+0.056, pos_10[2]-0.02]
 		pos_11 = p.getLinkState(self.panda_id, 11)[0]
-		new_pos_11  = [pos_11[0]+0.025, pos_11[1]+0.01, pos_11[2]-0.02]"""
+		new_pos_11  = [pos_11[0]+0.025, pos_11[1]-0.056, pos_11[2]-0.02]
+		self.debug_gui.draw_cross("pos_10" , a_pos = new_pos_10, a_size = 0.02)
+		self.debug_gui.draw_cross("pos_11" , a_pos = new_pos_11, a_size = 0.02)
+		p.stepSimulation()
+		
+		data = p.getMeshData(self.frite_id, -1, flags=p.MESH_DATA_SIMULATION_MESH)
+		pos_frite_6 = data[1][6]
+		pos_frite_9 = data[1][9]
+		self.debug_gui.draw_cross("pos_frite_6" , a_pos = pos_frite_6, a_size = 0.02)
+		self.debug_gui.draw_cross("pos_frite_9" , a_pos = pos_frite_9, a_size = 0.02)
+		"""
+		
+		
+		#p.createSoftBodyAnchor(self.frite_id, 6, self.panda_id , 10, [0.025,0.056,-0.02])
+		#p.createSoftBodyAnchor(self.frite_id, 9, self.panda_id , 11, [0.025,-0.056,-0.02])
+		
+		
 		p.createSoftBodyAnchor(self.frite_id, 6, self.panda_id , 10, [0.025,-0.01,-0.02])
 		p.createSoftBodyAnchor(self.frite_id, 9, self.panda_id , 11, [0.025,0.01,-0.02])
-	
 	
 	def go_to_position_simulated(self, a_position):
 		
@@ -729,7 +747,7 @@ class PandaFriteEnv(gym.Env):
 			p.stepSimulation()
 		
 			
-		for i in range(100):
+		for i in range(1000):
 					p.stepSimulation()
 		
 		"""	
@@ -776,8 +794,10 @@ class PandaFriteEnv(gym.Env):
 		for i in range(len(jointPoses)):
 			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=100 * 240.)
 		
+		"""
 		for i in range(1000):
 					p.stepSimulation()
+		"""
 	
 	def get_obs(self):
 		eff_link_state = p.getLinkState(self.panda_id, self.panda_end_eff_idx, computeLinkVelocity=1)
@@ -846,8 +866,6 @@ class PandaFriteEnv(gym.Env):
 		# reset pybullet to deformable object
 		p.resetSimulation(p.RESET_USE_DEFORMABLE_WORLD)
 		
-		#p.setRealTimeSimulation(1)
-
 		# bullet setup
 		# add pybullet path
 		currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))

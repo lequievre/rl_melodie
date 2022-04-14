@@ -25,9 +25,10 @@ from visualization_msgs.msg import MarkerArray, Marker
 
 from gym_panda_frite.envs.debug_gui import Debug_Gui
 
+
 class PandaFriteEnvROS(gym.Env):
 	
-	def __init__(self, database = None, distance_threshold = None, gui = None, E = None):
+	def __init__(self, database = None, distance_threshold = None, gui = None, E = None, env_pybullet = None):
 		
 		print("****** ROSSSSSSSSSS !!!! ************")
 		
@@ -36,11 +37,10 @@ class PandaFriteEnvROS(gym.Env):
 		
 		self.E = E
 		
-		# bullet paramters
-		#self.timeStep=1./240
-		self.timeStep = 0.0001
-		self.n_substeps = 20
-		self.dt = self.timeStep*self.n_substeps
+		# bullet env parameters + thread time_step
+		self.env_pybullet = env_pybullet
+		
+		self.dt = self.env_pybullet.time_step*self.env_pybullet.n_substeps
 		self.max_vel = 1
 		self.max_gripper_vel = 20
 		
@@ -96,7 +96,7 @@ class PandaFriteEnvROS(gym.Env):
 		# [23, 32] (under)
 		# [28, 53] (under)
 		# [9, 6] (TIP)
-		self.under_id_frite_to_follow = [ [63, 38], [58, 54], [42, 37], [28, 53] ]  # left then right  [left, right], [left,right] ...
+		self.under_id_frite_to_follow = [ [63, 38], [58, 54], [42, 37], [23, 32] ]  # left then right  [left, right], [left,right] ...
 		#self.under_id_frite_to_follow = [ [63, 38], [64, 45], [42, 37], [23, 32] ]  # left then right  [left, right], [left,right] ...
 		
 		
@@ -119,12 +119,6 @@ class PandaFriteEnvROS(gym.Env):
 		#print("PandaFriteEnv distance_threshold = {}".format(self.distance_threshold))
 		
 		self.seed()
-		
-		if gui == True:
-			# connect bullet
-			p.connect(p.GUI) #or p.GUI (for test) or p.DIRECT (for train) for non-graphical version
-		else:
-			p.connect(p.DIRECT)
 		
 		# switch tool to convert a numeric value to string value
 		self.switcher_type_name = {
@@ -177,7 +171,7 @@ class PandaFriteEnvROS(gym.Env):
 		
 		#self.show_cartesian_sliders()
 		
-		p.stepSimulation()
+		#p.stepSimulation()
 
 	def draw_cross_mocap_mesh(self):
 		for i in range(len(self.poses_meshes_in_arm_frame)):
@@ -205,11 +199,13 @@ class PandaFriteEnvROS(gym.Env):
 		
 		for i in range(len(jointPoses)):
 			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=100 * 240.)
-			p.stepSimulation()
-			
-		for i in range(3000):
+			#p.stepSimulation()
+		
+		
+		"""	
+		for i in range(1000):
 					p.stepSimulation()
-	
+		"""
 	
 	def transform_mocap_poses_to_arm_poses(self, mocap_poses, orientation_base_frame_array):
 		
@@ -254,9 +250,11 @@ class PandaFriteEnvROS(gym.Env):
 				print("goal x = {}, y = {}, z = {} ".format(goal_x, goal_y,goal_z))
 				goal_position = np.array([goal_x,goal_y,goal_z])
 				
-				input("go to goal position !")
-				self.go_to_position_simulated(goal_position)
+				#self.reset(use_frite=True)
 				
+				#input("go to goal position !")
+				self.go_to_position_simulated(goal_position)
+					
 				
 				gripper_pos = p.getLinkState(self.panda_id, self.panda_end_eff_idx)[0]
 				print("gripper pos =", gripper_pos)
@@ -276,18 +274,18 @@ class PandaFriteEnvROS(gym.Env):
 				#print(poses_mocap_array)
 				#print(poses_mocap_array_in_arm_frame)
 				
-				#time.sleep(4)
-				input("draw mesh and normal to follow !")
+				time.sleep(30)
+				#input("draw mesh and normal to follow !")
 				
 				self.compute_mesh_pos_to_follow(draw_normal=True)
 				
-				input("draw mesh mocapin arm frame !")
+				#input("draw mesh mocapin arm frame !")
 				
 				for i in range(len(poses_mocap_array_in_arm_frame)):
 					self.debug_gui.draw_cross("mesh_mocap_" + str(i) , a_pos = [poses_mocap_array_in_arm_frame[i][0],poses_mocap_array_in_arm_frame[i][1],poses_mocap_array_in_arm_frame[i][2]])
 				
 				nbline+=1
-				#time.sleep(4)
+				time.sleep(10)
 			
 		self.close_database_mocap()
 		
@@ -817,7 +815,7 @@ class PandaFriteEnvROS(gym.Env):
 			action[i] = p.readUserDebugParameter(self.list_slider_cartesian[i])
 		
 		self.set_action(action)
-		p.stepSimulation()
+		#p.stepSimulation()
 
 	
 	def set_gym_spaces(self):
@@ -981,14 +979,31 @@ class PandaFriteEnvROS(gym.Env):
 		# E = 40*pow(10,6)  NU = 0.49
 		
 		E = self.E*pow(10,6)
-		NU = 0.49
+		NU = 0.46
 		(a_lambda,a_mu) = self.conv_module_d_young_to_lame(E,NU)
 		
 		# frite : 103 cm with 0.1 cell size
 		self.frite_id = p.loadSoftBody("vtk/frite.vtk", basePosition = self.frite_startPos, baseOrientation=self.frite_startOrientation, mass = 0.2, useNeoHookean = 1, NeoHookeanMu = a_mu, NeoHookeanLambda = a_lambda, NeoHookeanDamping = 0.01, useSelfCollision = 1, collisionMargin = 0.001, frictionCoeff = 0.5, scale=1.0)
 		#p.changeVisualShape(self.frite_id, -1, flags=p.VISUAL_SHAPE_DOUBLE_SIDED)
 			
-
+		"""
+		self.frite_id = p.loadSoftBody(
+                fileName="vtk/frite.vtk",
+                basePosition=self.frite_startPos,
+                baseOrientation=self.frite_startOrientation,
+                collisionMargin=0.001,
+                scale=1.0,
+                mass=0.2,
+                useNeoHookean=0,
+                useBendingSprings=1,
+                useMassSpring=1,
+                springElasticStiffness=240,
+                springDampingStiffness=10,
+                springDampingAllDirections=0,
+                useSelfCollision=1,
+                frictionCoeff=1.0,
+                useFaceContact=1,)
+		"""
 	def load_plane(self):
 		self.plane_height = -0.85
 		self.plane_id = p.loadURDF("urdf/plane.urdf", basePosition=[0,0,self.plane_height], useFixedBase=True)
@@ -1071,7 +1086,7 @@ class PandaFriteEnvROS(gym.Env):
 				p.setJointMotorControl2(self.panda_id, joint_index, p.POSITION_CONTROL,
 											targetPosition=slider_value,
 											positionGain=0.2)
-				p.stepSimulation()
+				#p.stepSimulation()
 
 
 	def close_gripper(self):
@@ -1080,11 +1095,11 @@ class PandaFriteEnvROS(gym.Env):
 
 		p.setJointMotorControl2(self.panda_id, id_finger_joint1, 
 								p.POSITION_CONTROL,targetPosition=0.025,
-								positionGain=0.1)
+								positionGain=1.0)
 								
 		p.setJointMotorControl2(self.panda_id, id_finger_joint2 , 
 								p.POSITION_CONTROL,targetPosition=0.025,
-								positionGain=0.1)
+								positionGain=1.0)
 								
     
 	def create_anchor_panda(self):
@@ -1092,6 +1107,11 @@ class PandaFriteEnvROS(gym.Env):
 		# mesh id = 0 -> down
 		# -1, -1 -> means anchor to the cube
 		p.createSoftBodyAnchor(self.frite_id, 0, self.cube_id , -1, [0,0,0])
+		p.createSoftBodyAnchor(self.frite_id, 5, self.cube_id , -1, [0,0,0])
+		p.createSoftBodyAnchor(self.frite_id, 2, self.cube_id , -1, [0,0,0])
+		
+		p.createSoftBodyAnchor(self.frite_id, 4, self.cube_id , -1, [0,0,0])
+		p.createSoftBodyAnchor(self.frite_id, 3, self.cube_id , -1, [0,0,0])
 		#p.createSoftBodyAnchor(self.frite_id, 0, -1 , -1)
 		
 		# mesh id = 1 -> up
@@ -1105,6 +1125,10 @@ class PandaFriteEnvROS(gym.Env):
 		new_pos_11  = [pos_11[0]+0.025, pos_11[1]+0.01, pos_11[2]-0.02]"""
 		p.createSoftBodyAnchor(self.frite_id, 6, self.panda_id , 10, [0.025,-0.01,-0.02])
 		p.createSoftBodyAnchor(self.frite_id, 9, self.panda_id , 11, [0.025,0.01,-0.02])
+		
+		#p.createSoftBodyAnchor(self.frite_id, 6, self.panda_id , 10, [0.025,0.056,-0.02])
+		#p.createSoftBodyAnchor(self.frite_id, 9, self.panda_id , 11, [0.025,-0.056,-0.02])
+		
 		
 		
 	def set_action_cartesian(self, action):
@@ -1167,7 +1191,7 @@ class PandaFriteEnvROS(gym.Env):
 		action = np.clip(action, self.action_space.low, self.action_space.high)
 		new_gripper_pos = self.set_action(action)
 		
-		p.stepSimulation()
+		#p.stepSimulation()
 		
 		obs = self.get_obs()
 
@@ -1200,43 +1224,30 @@ class PandaFriteEnvROS(gym.Env):
 		
 	def reset(self, use_frite=True):	
 		
-		# reset pybullet to deformable object
-		p.resetSimulation(p.RESET_USE_DEFORMABLE_WORLD)
-
-		# bullet setup
-		# add pybullet path
-		currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-		#print("currentdir = {}".format(currentdir))
-		p.setAdditionalSearchPath(currentdir)
+		self.debug_gui.reset()
 		
-		#p.setPhysicsEngineParameter(numSolverIterations=150, numSubSteps = self.n_substeps)
-		p.setPhysicsEngineParameter(numSubSteps = self.n_substeps)
-		p.setTimeStep(self.timeStep)
-
-		# Set Gravity to the environment
-		#p.setGravity(0, 0, -9.81)
-		p.setGravity(0, 0, 0)
+		self.env_pybullet.reset()
 		
 		# load plane
 		self.load_plane()
-		p.stepSimulation()
+		#p.stepSimulation()
 
 		
 		#load panda
 		self.load_panda()
-		p.stepSimulation()
+		#p.stepSimulation()
 		
 		# set panda joints to initial positions
 		self.set_panda_initial_joints_positions()
-		p.stepSimulation()
+		#p.stepSimulation()
 		
 		
-		self.draw_gripper_position()
-		p.stepSimulation()
+		#self.draw_gripper_position()
+		#p.stepSimulation()
 		
 		# load cube
 		self.load_cube()
-		p.stepSimulation()
+		#p.stepSimulation()
 		
 		# set gym spaces
 		self.set_gym_spaces()
@@ -1244,17 +1255,17 @@ class PandaFriteEnvROS(gym.Env):
 		if use_frite:
 			# load frite
 			self.load_frite()
-			p.stepSimulation()
+			#p.stepSimulation()
 		
 			
 			# close gripper
 			self.close_gripper()
-			p.stepSimulation()
+			#p.stepSimulation()
 			
 			
 			# anchor frite to gripper
 			self.create_anchor_panda()
-			p.stepSimulation()
+			#p.stepSimulation()
 		
 		
 		# sample a new goal

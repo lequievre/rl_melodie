@@ -6,13 +6,15 @@ class Debug_Gui:
 		self.env = env
 		self.dic_id = {}
 	
+	def reset(self):
+		self.dic_id = {}
 	
 	def draw_text(self, a_name, a_text = "", a_pos = [0,0,0], a_size = 1.5, a_color = [1, 0, 0]):
 		if ( str(a_name)+"_txt" in self.dic_id.keys() ):
 			p.addUserDebugText(a_text, a_pos,textColorRGB=a_color,textSize=a_size,replaceItemUniqueId  = self.dic_id[str(name)+"_txt"])
 		else:
 			self.dic_id[str(a_name)+"_txt"] = p.addUserDebugText(a_text, a_pos,textColorRGB=a_color,textSize=a_size)
-		p.stepSimulation()
+		#p.stepSimulation()
 		
 		
 	def draw_line(self, name, a_pos_from = [0,0,0], a_pos_to = [0,0,0], a_size = 0.1, a_color = [1, 0, 0], a_width = 3.0, a_time = 0):
@@ -31,7 +33,7 @@ class Debug_Gui:
 			   lineWidth            = a_width        ,
 			   lifeTime             = a_time
 					 )	
-		p.stepSimulation()
+		#p.stepSimulation()
 		
 	def draw_cross(self, name, a_pos = [0,0,0], a_size = 0.1, a_color = [1, 0, 0], a_width = 3.0, a_time = 0):
 		
@@ -87,7 +89,7 @@ class Debug_Gui:
 			   lineWidth            = a_width        ,
 			   lifeTime             = a_time
 					 )
-		p.stepSimulation()
+		#p.stepSimulation()
 	
 	def draw_box(self, low , high , color = [0, 0, 1]):
 		low_array = low
@@ -119,4 +121,4 @@ class Debug_Gui:
 		p.addUserDebugLine(p3, p7, lineColorRGB=color, lineWidth=2.0, lifeTime=0)
 		p.addUserDebugLine(p4, p8, lineColorRGB=color, lineWidth=2.0, lifeTime=0)
 		
-		p.stepSimulation()
+		#p.stepSimulation()

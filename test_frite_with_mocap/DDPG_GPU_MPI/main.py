@@ -20,9 +20,12 @@ import pybullet as p
 import gym_panda_frite
 from database_frite import Database_Frite
 
+from gym_panda_frite.envs.environment import Environment
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode', default='train', type=str) # mode = 'train' or 'test' or 'debug_cartesian' or 'debug_articular'
-parser.add_argument("--env_name", default="PandaFrite-v0")
+parser.add_argument("--env_name", default="PandaFrite-v1")
 parser.add_argument('--log_interval', default=50, type=int) #
 parser.add_argument('--max_episode', default=2000, type=int) # num of episodes
 parser.add_argument('--max_step', default=500, type=int) # num of step per episodes
@@ -44,7 +47,8 @@ parser.add_argument('--db_nb_z', default=10, type=int)
 parser.add_argument('--db_nb_random_goal', default=250, type=int)
 parser.add_argument('--E', default=40, type=int)
 parser.add_argument('--gui', default=False, type=bool) # use cuda
-parser.add_argument('--use_random_db', default=True, type=bool) # use cuda
+parser.add_argument('--use_random_db', default=True, type=bool) # use random db
+parser.add_argument('--time_step', default=0.001, type=float)
 
 
 args = parser.parse_args()
@@ -74,8 +78,11 @@ def main():
 		raise RuntimeError("=> Database file to load does not exit : " + load_path_databases + args.load_database_name)
 		return        
 	
+	
+	env_pybullet = Environment(time_step=args.time_step, gui=args.gui)
+	env_pybullet.reset()
 	db = Database_Frite(path_load=load_path_databases, load_name=args.load_database_name, generate_name=args.generate_database_name, path_generate=generate_path_databases, nb_x=args.db_nb_x, nb_y=args.db_nb_y, nb_z=args.db_nb_z, db_nb_random_goal=args.db_nb_random_goal, use_random_db=args.use_random_db)
-	env = gym.make(args.env_name, database=db, distance_threshold=args.distance_threshold, gui=args.gui, E=args.E)
+	env = gym.make(args.env_name, database=db, distance_threshold=args.distance_threshold, gui=args.gui, E=args.E, env_pybullet=env_pybullet)
 
 	env.seed(args.random_seed + MPI.COMM_WORLD.Get_rank())
 	torch.manual_seed(args.random_seed + MPI.COMM_WORLD.Get_rank())
@@ -220,12 +227,15 @@ def main():
 			   break	       
 	elif args.mode == 'generate_database':
 		
-		state = env.reset(use_frite=True)
+		#state = env.reset(use_frite=True)
 		env.draw_env_box()
 		
-		db.print_config()
+		input("hit return !")
 		
-		time.sleep(2)
+		
+		#db.print_config()
+		
+		#time.sleep(2)
 		
 		db.generate()
 		

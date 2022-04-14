@@ -3,6 +3,7 @@ import pybullet as p
 import numpy as np
 from numpy import random
 import math
+import time
 
 class Database_Frite:
 	def __init__(self, path_load, load_name, path_generate, generate_name, nb_x=10, nb_y=30, nb_z=10, db_nb_random_goal=250, use_random_db=True):
@@ -203,11 +204,13 @@ class Database_Frite:
 		f = open(self.path_generate + self.generate_name, "w+")
 		
 		for i in range(self.db_nb_random_goal):
+			#self.env.reset(use_frite=True)
 			# get a random goal = numpy array [x,y,z]
-			a_random_goal = self.env.sample_goal_random()
+			a_random_goal = self.env.sample_goal_database()
 			print("-> {} : Go to GOAL : {} !".format(i,a_random_goal))
 			self.env.go_to_position_simulated(a_random_goal)
 			print("-> Goal OK !")
+			time.sleep(30)
 			print("->Compute mesh pos to follow !")
 			self.env.compute_mesh_pos_to_follow(draw_normal=True)
 			#input("Press Enter to continue !")
