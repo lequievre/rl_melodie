@@ -899,7 +899,7 @@ class PandaFriteEnvROS(gym.Env):
 		# action_space = cartesian world velocity (vx, vy, vz)  = 3 float
 		self.action_space = spaces.Box(-1., 1., shape=(3,), dtype=np.float32)
 		
-		# observation = 32 float -> see function _get_obs
+		# observation = 30 float -> see function _get_obs
 		self.observation_space = spaces.Box(np.finfo(np.float32).min, np.finfo(np.float32).max, shape=(30,), dtype=np.float32)
 
 		
@@ -975,7 +975,7 @@ class PandaFriteEnvROS(gym.Env):
 		# frite blanche :
 		# E = 0.1*pow(10,6)  NU = 0.49
 		
-		# frite noire :
+		# frite noire :  E = 35 , NU = 0.46
 		# E = 40*pow(10,6)  NU = 0.49
 		
 		E = self.E*pow(10,6)
@@ -1157,7 +1157,7 @@ class PandaFriteEnvROS(gym.Env):
 		jointPoses = p.calculateInverseKinematics(self.panda_id, self.panda_end_eff_idx, new_pos, cur_orien)[0:7]
 		
 		for i in range(len(jointPoses)):
-			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=10 * 240.)
+			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=100 * 240.)
 	
 	
 	def get_obs(self):
@@ -1165,6 +1165,7 @@ class PandaFriteEnvROS(gym.Env):
 		gripper_link_pos = np.array(eff_link_state[0]) # gripper cartesian world position = 3 float (x,y,z) = achieved goal
 		gripper_link_vel = np.array(eff_link_state[6]) # gripper cartesian world velocity = 3 float (vx, vy, vz)
 		
+		self.compute_mesh_pos_to_follow(draw_normal=False)
 		mesh_to_follow_pos = np.array(self.position_mesh_to_follow).flatten()
 		
 		# self.goal = len(self.id_frite_to_follow = [53, 129, 101, 179]) x 3 values (x,y,z) cartesian world position = 12 floats
@@ -1191,7 +1192,7 @@ class PandaFriteEnvROS(gym.Env):
 		action = np.clip(action, self.action_space.low, self.action_space.high)
 		new_gripper_pos = self.set_action(action)
 		
-		#p.stepSimulation()
+		time.sleep(30)
 		
 		obs = self.get_obs()
 
@@ -1232,7 +1233,6 @@ class PandaFriteEnvROS(gym.Env):
 		self.load_plane()
 		#p.stepSimulation()
 
-		
 		#load panda
 		self.load_panda()
 		#p.stepSimulation()
@@ -1240,7 +1240,6 @@ class PandaFriteEnvROS(gym.Env):
 		# set panda joints to initial positions
 		self.set_panda_initial_joints_positions()
 		#p.stepSimulation()
-		
 		
 		#self.draw_gripper_position()
 		#p.stepSimulation()
@@ -1257,7 +1256,6 @@ class PandaFriteEnvROS(gym.Env):
 			self.load_frite()
 			#p.stepSimulation()
 		
-			
 			# close gripper
 			self.close_gripper()
 			#p.stepSimulation()
@@ -1269,23 +1267,14 @@ class PandaFriteEnvROS(gym.Env):
 		
 		
 		# sample a new goal
-		#self.goal = self.sample_goal()
-		#p.stepSimulation()
-		
-		#self.draw_all_ids_mesh_frite()
-		#p.stepSimulation()
-		
-		#self.compute_mean_pos_id_frite_to_follow()
-		#p.stepSimulation()
-		
-		#self.compute_mesh_pos_to_follow()
+		self.goal = self.sample_goal()
 		#p.stepSimulation()
 		
 		# draw goal
-		#self.draw_goal()
+		self.draw_goal()
 		#p.stepSimulation()
 		
-		#return self.get_obs()
+		return self.get_obs()
 		
 	def render(self):
 		print("render !")
