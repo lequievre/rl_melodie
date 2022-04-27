@@ -28,7 +28,7 @@ from gym_panda_frite.envs.debug_gui import Debug_Gui
 
 class PandaFriteEnvROS(gym.Env):
 	
-	def __init__(self, database = None, distance_threshold = None, gui = None, E = None, env_pybullet = None):
+	def __init__(self, database = None, distance_threshold = None, gui = None, E = None, env_pybullet = None, time_set_action = 30):
 		
 		print("****** ROSSSSSSSSSS !!!! ************")
 		
@@ -36,6 +36,7 @@ class PandaFriteEnvROS(gym.Env):
 		self.debug_lines_gripper_array = [0, 0, 0, 0]
 		
 		self.E = E
+		self.time_set_action = time_set_action
 		
 		# bullet env parameters + thread time_step
 		self.env_pybullet = env_pybullet
@@ -323,7 +324,7 @@ class PandaFriteEnvROS(gym.Env):
 		self.close_database_mocap()
 	
 	def sample_goal_database(self):
-		# sample a goal np.array[x,v,z] from the goal_space 
+		# sample a goal np.array[x,y,z] from the goal_space 
 		goal = np.array(self.goal_space.sample())
 		return goal.copy()
 		
@@ -645,7 +646,10 @@ class PandaFriteEnvROS(gym.Env):
 		
 		return vmean_shifted
 	
-	
+	def draw_id_to_follow(self):
+		for i in range(len(self.id_frite_to_follow)):
+			self.debug_gui.draw_cross("id_frite_"+str(i), a_pos = self.position_mesh_to_follow[i], a_color = [0, 0, 1])
+
 	def draw_normal_plane(self, index, data, a_normal_pt):
 		# self.id_frite_to_follow[index][0] -> upper left
 		# self.id_frite_to_follow[index][1] -> upper right
@@ -1208,7 +1212,7 @@ class PandaFriteEnvROS(gym.Env):
 		action = np.clip(action, self.action_space.low, self.action_space.high)
 		new_gripper_pos = self.set_action(action)
 		
-		time.sleep(30)
+		time.sleep(self.time_set_action)
 		
 		obs = self.get_obs()
 

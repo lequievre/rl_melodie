@@ -49,6 +49,7 @@ parser.add_argument('--E', default=40, type=int)
 parser.add_argument('--gui', default=False, type=bool) # use cuda
 parser.add_argument('--use_random_db', default=True, type=bool) # use random db
 parser.add_argument('--time_step', default=0.001, type=float)
+parser.add_argument('--time_set_action', default=30.0, type=float)
 
 
 args = parser.parse_args()
@@ -82,7 +83,7 @@ def main():
 	env_pybullet = Environment(time_step=args.time_step, gui=args.gui)
 	env_pybullet.reset()
 	db = Database_Frite(path_load=load_path_databases, load_name=args.load_database_name, generate_name=args.generate_database_name, path_generate=generate_path_databases, nb_x=args.db_nb_x, nb_y=args.db_nb_y, nb_z=args.db_nb_z, db_nb_random_goal=args.db_nb_random_goal, use_random_db=args.use_random_db)
-	env = gym.make(args.env_name, database=db, distance_threshold=args.distance_threshold, gui=args.gui, E=args.E, env_pybullet=env_pybullet)
+	env = gym.make(args.env_name, database=db, distance_threshold=args.distance_threshold, gui=args.gui, E=args.E, env_pybullet=env_pybullet, time_set_action=args.time_set_action)
 
 	env.seed(args.random_seed + MPI.COMM_WORLD.Get_rank())
 	torch.manual_seed(args.random_seed + MPI.COMM_WORLD.Get_rank())
@@ -101,6 +102,7 @@ def main():
 		agent.load()
 		n_episodes = 100
 		n_steps = 10
+		nb_dones = 0
 		sum_distance_error = 0
 		for episode in range(n_episodes):
 			print("Episode : {}".format(episode))
@@ -125,12 +127,16 @@ def main():
 			   
 				if done:
 				   print("done with step={}  !".format(step))
+				   nb_dones+=1
 				   break
 			if (args.gui):
-				time.sleep(0.75)
+				#time.sleep(0.75)
+				input("hit return to continue !")
 			
 		   
 			sum_distance_error += current_distance_error
+		print("time_set_action = {}".format(args.time_set_action))
+		print("nb dones = {}".format(nb_dones))
 		print("mean distance error = {}".format(sum_distance_error/n_episodes))
 		print("sum distance error = {}".format(sum_distance_error))
 		
