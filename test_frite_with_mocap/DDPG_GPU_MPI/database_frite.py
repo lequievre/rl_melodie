@@ -6,14 +6,16 @@ import math
 import time
 
 class Database_Frite:
-	def __init__(self, path_load, load_name, path_generate, generate_name, nb_x=10, nb_y=30, nb_z=10, db_nb_random_goal=250, use_random_db=True):
+	def __init__(self, path_load, load_name, path_generate, generate_name, nb_x=10, nb_y=30, nb_z=10, db_nb_random_goal=250, type_db=0):
 		
 		self.load_name = load_name
 		self.generate_name = generate_name
 		self.path_load = path_load
 		self.path_generate = path_generate
 		self.db_nb_random_goal = db_nb_random_goal
-		self.use_random_db = use_random_db
+		
+		# type of db , 0 = classic, 1 = random, 2 = mocap
+		self.type_db = type_db
 		
 		self.nb_x = nb_x
 		self.nb_y = nb_y
@@ -36,10 +38,10 @@ class Database_Frite:
 	def print_config(self):
 		self.init_spaces()
 		
-		if self.use_random_db:
+		if self.type_db==1:
 			print("RANDOM DB !")
 			print("db_nb_random_goal = {}".format(self.db_nb_random_goal))
-		else:
+		elif self.type_db==0:
 			print("CLASSIC DB !")
 			d_x = self.goal_high[0] - self.goal_low[0]
 			d_y = self.goal_high[1] - self.goal_low[1]
@@ -52,6 +54,9 @@ class Database_Frite:
 			print("range_x={}, range_y={}, range_z={}".format(self.range_x,self.range_y,self.range_z))
 			print("delta_x={}, delta_y={}".format(self.delta_x,self.delta_y))
 			print("**************************************")
+		elif self.type_db==2:
+			print("MOCAP DB !")
+			print("db_nb_random_goal = {}".format(self.db_nb_random_goal))
 		
 		
 	
@@ -124,11 +129,60 @@ class Database_Frite:
 			return None
 	
 	def load(self):
-		if self.use_random_db:
-			self.load_random()
-		else:
+		if self.type_db==0:
 			self.load_classic()
+		elif self.type_db==1:
+			self.load_random()
+		elif self.type_db==2:
+			self.load_mocap()
 	
+	
+	def load_mocap(self):
+		print("=> LOAD MOCAP DATABASE Name = {}".format(self.path_load + self.load_name))
+		f = open(self.path_load + self.load_name)
+		poses_mocap_array = np.zeros((5,3))
+		total_list = []
+		self.nb_lines = 0
+		for line in f.readlines():
+			line_split = line.split()
+			self.nb_lines+=1
+			
+			if (len(line_split) != 22):
+				print("Erreur on line ", nbline)
+				
+			else:
+				#goal_x = float(line_split[0])
+				#goal_y = float(line_split[1])
+				#goal_z = float(line_split[2])
+				# Get orientation x,y,z,w
+				orientation_base_frame_array = np.array([float(line_split[3]),float(line_split[4]),float(line_split[5]),float(line_split[6])])
+				
+				for i in range(5):
+					x = float(line_split[((i+1)*3)+4])
+					y = float(line_split[((i+1)*3)+5])
+					z = float(line_split[((i+1)*3)+6])
+					poses_mocap_array[i][0] = x
+					poses_mocap_array[i][1] = y
+					poses_mocap_array[i][2] = z
+				
+				print("poses_mocap_array = {}, orientation_base_frame_array = {}".format(poses_mocap_array,orientation_base_frame_array ))	
+				poses_mocap_array_in_arm_frame = self.env.transform_mocap_poses_to_arm_poses(poses_mocap_array, orientation_base_frame_array)
+				
+				for i in range(4):
+					total_list.append(poses_mocap_array_in_arm_frame[i+1][0])
+					total_list.append(poses_mocap_array_in_arm_frame[i+1][1])
+					total_list.append(poses_mocap_array_in_arm_frame[i+1][2])
+				
+		self.nb_deformations = self.nb_lines
+		print("nb lines = {}, nb points = {}, nb_deformations = {}".format(self.nb_lines, self.nb_points,self.nb_deformations))
+		self.data = np.array(total_list).reshape(self.nb_deformations, self.nb_points, 3)
+		
+		
+		print("shape = {}".format(self.data.shape))	
+		print(self.data[0,0])
+		
+				
+		
 	def load_random(self):
 		f = open(self.path_load + self.load_name)
 		total_list = []
@@ -194,10 +248,10 @@ class Database_Frite:
 
 
 	def generate(self):
-		if self.use_random_db:
-			self.generate_random()
-		else:
+		if self.type_db==0:
 			self.generate_classic()
+		elif self.type_db==1:
+			self.generate_random()
 			
 	def generate_random(self):
 		print("->Open database file : ", self.path_generate + self.generate_name , " !")

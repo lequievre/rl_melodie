@@ -1,0 +1,69 @@
+Test 1
+============
+
+Entrainement sur la pose gym space extra small et la goal space extra extra small :
+
+# Goal Space
+# EXTRA EXTRA SMALL
+low_marge = 0.1
+low_x_down = panda_eff_state[0][0]-0.5*low_marge
+low_x_up = panda_eff_state[0][0]+0.25*low_marge
+
+low_y_down = panda_eff_state[0][1]-1.5*low_marge
+low_y_up = panda_eff_state[0][1]+1.5*low_marge
+
+
+#z_low_marge = 0.25
+z_low_marge = 0.10
+low_z_down = panda_eff_state[0][2]-z_low_marge
+low_z_up = panda_eff_state[0][2]
+
+
+# POSE EXTRA SMALL
+low_marge = 0.1
+low_x_down = panda_eff_state[0][0]-1.0*low_marge
+low_x_up = panda_eff_state[0][0]+0.5*low_marge
+
+low_y_down = panda_eff_state[0][1]-2.5*low_marge
+low_y_up = panda_eff_state[0][1]+2.5*low_marge
+
+
+z_low_marge = 0.25
+#z_low_marge = 0.10
+low_z_down = panda_eff_state[0][2]-z_low_marge
+low_z_up = panda_eff_state[0][2]
+
+===========
+Résultats
+===========
+
+sans resetde l'env
+
+Gym spaces pareil que pour l'entrainement
+
+python main.py --mode test --save_dir_name './w32_xxs_005_10_s/' --distance_threshold 0.05 --time_step 0.0001 --E 35 --time_set_action 10
+
+
+time_set_action = 10.0
+nb dones = 66
+mean distance error = 0.04930280588567257
+sum distance error = 4.930280588567257
+
+
+python main.py --mode test --save_dir_name './w32_xxs_005_30_s/' --distance_threshold 0.05 --time_step 0.0001 --E 35 --time_set_action 30
+
+
+time_set_action = 30.0
+nb dones = 68
+mean distance error = 0.04804810270667076
+sum distance error = 4.804810270667076
+
+
+
+Test2 avec database mocap 
+========================
+
+python main.py --mode test --save_dir_name './w32_xxs_005_30_s/' --distance_threshold 0.05 --time_step 0.0001 --E 35 --time_set_action 30 --gui True --type_db 2 --load_db_dir_name '/default_load_mocap/'  --load_database_name 'database_goal_mocap_poses_10_s_100.txt'
+
+
+

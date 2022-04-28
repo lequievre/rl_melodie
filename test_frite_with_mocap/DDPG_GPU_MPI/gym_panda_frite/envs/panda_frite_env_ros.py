@@ -45,6 +45,13 @@ class PandaFriteEnvROS(gym.Env):
 		self.max_vel = 1
 		self.max_gripper_vel = 20
 		
+		self.matrix_base_frame_in_arm_frame = np.array(
+											[[1, 0, 0, 0.025],
+											[0, 1, 0, 0.422],
+											[0, 0, 1, 0.017],
+											[0, 0, 0, 1]]
+										)
+		
 		
 		self.id_debug_gripper_position = None
 		self.id_debug_joints_values = None
@@ -853,7 +860,7 @@ class PandaFriteEnvROS(gym.Env):
 		low_z_up = panda_eff_state[0][2]
 		"""
 		
-		
+		"""
 		# EXTRA EXTRA SMALL
 		low_marge = 0.1
 		low_x_down = panda_eff_state[0][0]-0.5*low_marge
@@ -867,9 +874,9 @@ class PandaFriteEnvROS(gym.Env):
 		z_low_marge = 0.10
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
-		
-		
 		"""
+		
+		
 		# EXTRA SMALL
 		low_marge = 0.1
 		low_x_down = panda_eff_state[0][0]-1.0*low_marge
@@ -879,15 +886,16 @@ class PandaFriteEnvROS(gym.Env):
 		low_y_up = panda_eff_state[0][1]+2.5*low_marge
 		
 		
-		#z_low_marge = 0.25
-		z_low_marge = 0.10
+		z_low_marge = 0.25
+		#z_low_marge = 0.10
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
-		"""
+		
 		self.goal_space = spaces.Box(low=np.array([low_x_down, low_y_down ,low_z_down]), high=np.array([low_x_up, low_y_up ,low_z_up]))
 		#print("frite env goal space = {}".format(self.goal_space))
 		
 		"""
+		# POSE LARGE
 		low_marge = 0.1
 		low_x_down = panda_eff_state[0][0]-2*low_marge
 		low_x_up = panda_eff_state[0][0]+low_marge
@@ -899,7 +907,7 @@ class PandaFriteEnvROS(gym.Env):
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
 		"""
-		
+		"""
 		# POSE EXTRA SMALL
 		low_marge = 0.1
 		low_x_down = panda_eff_state[0][0]-1.0*low_marge
@@ -913,6 +921,21 @@ class PandaFriteEnvROS(gym.Env):
 		#z_low_marge = 0.10
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
+		
+		"""
+		# POSE SMALL
+		low_marge = 0.1
+		low_x_down = panda_eff_state[0][0]-1.5*low_marge
+		low_x_up = panda_eff_state[0][0]+0.75*low_marge
+		
+		low_y_down = panda_eff_state[0][1]-3*low_marge
+		low_y_up = panda_eff_state[0][1]+3*low_marge
+		
+		
+		z_low_marge = 0.3
+		low_z_down = panda_eff_state[0][2]-z_low_marge
+		low_z_up = panda_eff_state[0][2]
+		
 		
 		self.pos_space = spaces.Box(low=np.array([low_x_down, low_y_down ,low_z_down]), high=np.array([low_x_up, low_y_up ,low_z_up]))
 		

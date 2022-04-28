@@ -47,7 +47,7 @@ parser.add_argument('--db_nb_z', default=10, type=int)
 parser.add_argument('--db_nb_random_goal', default=250, type=int)
 parser.add_argument('--E', default=40, type=int)
 parser.add_argument('--gui', default=False, type=bool) # use cuda
-parser.add_argument('--use_random_db', default=True, type=bool) # use random db
+parser.add_argument('--type_db', default=0, type=int) # type of db , 0 = classic, 1 = random, 2 = mocap
 parser.add_argument('--time_step', default=0.001, type=float)
 parser.add_argument('--time_set_action', default=30.0, type=float)
 
@@ -82,7 +82,7 @@ def main():
 	
 	env_pybullet = Environment(time_step=args.time_step, gui=args.gui)
 	env_pybullet.reset()
-	db = Database_Frite(path_load=load_path_databases, load_name=args.load_database_name, generate_name=args.generate_database_name, path_generate=generate_path_databases, nb_x=args.db_nb_x, nb_y=args.db_nb_y, nb_z=args.db_nb_z, db_nb_random_goal=args.db_nb_random_goal, use_random_db=args.use_random_db)
+	db = Database_Frite(path_load=load_path_databases, load_name=args.load_database_name, generate_name=args.generate_database_name, path_generate=generate_path_databases, nb_x=args.db_nb_x, nb_y=args.db_nb_y, nb_z=args.db_nb_z, db_nb_random_goal=args.db_nb_random_goal, type_db=args.type_db)
 	env = gym.make(args.env_name, database=db, distance_threshold=args.distance_threshold, gui=args.gui, E=args.E, env_pybullet=env_pybullet, time_set_action=args.time_set_action)
 
 	env.seed(args.random_seed + MPI.COMM_WORLD.Get_rank())
