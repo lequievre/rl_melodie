@@ -656,6 +656,7 @@ class PandaFriteEnvROS(gym.Env):
 	def draw_id_to_follow(self):
 		for i in range(len(self.id_frite_to_follow)):
 			self.debug_gui.draw_cross("id_frite_"+str(i), a_pos = self.position_mesh_to_follow[i], a_color = [0, 0, 1])
+			#self.debug_gui.draw_text("text_id_frite_"+str(i), a_text = str(i), a_pos = self.position_mesh_to_follow[i], a_color = [0, 0, 1])
 
 	def draw_normal_plane(self, index, data, a_normal_pt):
 		# self.id_frite_to_follow[index][0] -> upper left
@@ -799,6 +800,7 @@ class PandaFriteEnvROS(gym.Env):
 	def draw_goal(self):
 		for i in range(self.goal.shape[0]):
 			self.debug_gui.draw_cross("goal_"+str(i) , a_pos = self.goal[i])
+			#self.debug_gui.draw_text("text_goal_"+str(i), a_text = str(i), a_pos = self.goal[i])
 			
 			
 	def draw_gripper_position(self):
@@ -907,7 +909,7 @@ class PandaFriteEnvROS(gym.Env):
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
 		"""
-		"""
+		
 		# POSE EXTRA SMALL
 		low_marge = 0.1
 		low_x_down = panda_eff_state[0][0]-1.0*low_marge
@@ -921,6 +923,7 @@ class PandaFriteEnvROS(gym.Env):
 		#z_low_marge = 0.10
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
+	
 		
 		"""
 		# POSE SMALL
@@ -935,7 +938,7 @@ class PandaFriteEnvROS(gym.Env):
 		z_low_marge = 0.3
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
-		
+		"""
 		
 		self.pos_space = spaces.Box(low=np.array([low_x_down, low_y_down ,low_z_down]), high=np.array([low_x_up, low_y_up ,low_z_up]))
 		

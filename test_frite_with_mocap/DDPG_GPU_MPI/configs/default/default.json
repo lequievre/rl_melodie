@@ -1,0 +1,32 @@
+{
+	"env": {
+		"name": "PandaFrite-v1",
+		"random_seed": 9527,
+		"distance_threshold": 0.05,
+		"E": 40,
+		"time_step": 0.001,
+		"time_set_action": 30.0,
+		"reset": false
+	},
+	"ddpg": {
+		 "log_interval": 50,
+		 "max_episode": 2000,
+		 "max_step": 500,
+		 "batch_size": 128,
+		 "max_memory_size": 50000,
+		 "load": false,
+		 "save_dir_name": "./weights/",
+		 "cuda": false
+	},
+	"database": {
+		"generate_database_name": "database_id_frite.txt",
+		"load_database_name": "database_id_frite.txt",
+		"generate_db_dir_name": "/default_generate/",
+		"load_db_dir_name": "/default_load/",
+		"db_nb_x": 8,
+		"db_nb_y": 22,
+		"db_nb_z": 10,
+		"db_nb_random_goal": 250,
+		"type_db": 0
+	}
+}

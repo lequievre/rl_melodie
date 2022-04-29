@@ -65,5 +65,7 @@ Test2 avec database mocap
 
 python main.py --mode test --save_dir_name './w32_xxs_005_30_s/' --distance_threshold 0.05 --time_step 0.0001 --E 35 --time_set_action 30 --gui True --type_db 2 --load_db_dir_name '/default_load_mocap/'  --load_database_name 'database_goal_mocap_poses_10_s_100.txt'
 
-
-
+time_set_action = 30.0
+nb dones = 0
+mean distance error = 0.4921236166357994
+sum distance error = 49.21236166357994

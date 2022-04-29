@@ -168,7 +168,7 @@ class Database_Frite:
 				print("poses_mocap_array = {}, orientation_base_frame_array = {}".format(poses_mocap_array,orientation_base_frame_array ))	
 				poses_mocap_array_in_arm_frame = self.env.transform_mocap_poses_to_arm_poses(poses_mocap_array, orientation_base_frame_array)
 				
-				for i in range(4):
+				for i in reversed(range(4)):
 					total_list.append(poses_mocap_array_in_arm_frame[i+1][0])
 					total_list.append(poses_mocap_array_in_arm_frame[i+1][1])
 					total_list.append(poses_mocap_array_in_arm_frame[i+1][2])
