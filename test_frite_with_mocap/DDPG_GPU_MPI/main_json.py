@@ -22,158 +22,244 @@ from database_frite import Database_Frite
 
 from gym_panda_frite.envs.environment import Environment
 
-
 from json_decoder import JsonDecoder
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode', default='train', type=str) # mode = 'train' or 'test' or 'debug_cartesian' or 'debug_articular'
 parser.add_argument('--gui', default=False, type=bool) # use gui to see graphic results
 parser.add_argument('--config_file', default='./configs/default/default.json', type=str)
 
-
-
-
-
-
-
-
-parser.add_argument("--env_name", default="PandaFrite-v1")
-parser.add_argument('--log_interval', default=50, type=int) #
-parser.add_argument('--max_episode', default=2000, type=int) # num of episodes
-parser.add_argument('--max_step', default=500, type=int) # num of step per episodes
-parser.add_argument('--batch_size', default=128, type=int) # num of games
-parser.add_argument('--max_memory_size', default=50000, type=int) # num of games
-parser.add_argument('--update_iteration', default=10, type=int) # num of games
-parser.add_argument('--load', default=False, type=bool) # load model
-parser.add_argument('--random_seed', default=9527, type=int)
-parser.add_argument('--save_dir_name', default='./weights/', type=str)
-parser.add_argument('--cuda', default=False, type=bool) # use cuda
-parser.add_argument('--generate_database_name', default='database_id_frite.txt', type=str)
-parser.add_argument('--load_database_name', default='database_id_frite.txt', type=str)
-parser.add_argument('--distance_threshold', default=0.05, type=float) #
-parser.add_argument('--generate_db_dir_name', default='/default_generate/', type=str)
-parser.add_argument('--load_db_dir_name', default='/default_load/', type=str)
-parser.add_argument('--db_nb_x', default=8, type=int)
-parser.add_argument('--db_nb_y', default=22, type=int)
-parser.add_argument('--db_nb_z', default=10, type=int)
-parser.add_argument('--db_nb_random_goal', default=250, type=int)
-parser.add_argument('--E', default=40, type=int)
-
-parser.add_argument('--type_db', default=0, type=int) # type of db , 0 = classic, 1 = random, 2 = mocap
-parser.add_argument('--time_step', default=0.001, type=float)
-parser.add_argument('--time_set_action', default=30.0, type=float)
-
-
 args = parser.parse_args()
 
 def main():
+	
+	json_decoder = JsonDecoder(args.config_file)
 
 	os.environ['OMP_NUM_THREADS'] = '1'
 	os.environ['MKL_NUM_THREADS'] = '1'
 	os.environ['IN_MPI'] = '1'
 
-	directory = args.save_dir_name
-	root_path_databases = "./databases"
-	generate_path_databases = root_path_databases + args.generate_db_dir_name
-	load_path_databases = root_path_databases + args.load_db_dir_name
-
+	root_path_databases = json_decoder.config_data["database"]["root_path_databases"]
+	generate_db_dir_name = json_decoder.config_data["database"]["generate_db_dir_name"]
+	load_db_dir_name = json_decoder.config_data["database"]["load_db_dir_name"]
+	load_database_name = json_decoder.config_data["database"]["load_database_name"]
+	generate_database_name = json_decoder.config_data["database"]["generate_database_name"]
+	
+	generate_path_databases = root_path_databases + generate_db_dir_name
+	load_path_databases = root_path_databases + load_db_dir_name
+	print("** DATABASE PARAMETERS **")
+	print("root_path_databases = {}".format(root_path_databases))
+	print("generate_db_dir_name = {}".format(generate_db_dir_name))
+	print("load_db_dir_name = {}".format(load_db_dir_name))
+	print("load_database_name = {}".format(load_database_name))
+	print("generate_database_name = {}".format(generate_database_name))
+	print("generate_path_databases = {}".format(generate_path_databases))
+	print("load_path_databases = {}".format(load_path_databases))
+	
+	env_name = json_decoder.config_data["env"]["name"]
+	env_random_seed = json_decoder.config_data["env"]["random_seed"]
+	env_time_set_action = json_decoder.config_data["env"]["time_set_action"]
+	
+	print("** ENV PARAMETERS **")
+	print("env_name = {}".format(env_name))
+	print("env_random_seed = {}".format(env_random_seed))
+	print("env_time_set_action = {}".format(env_time_set_action))
+	
+	weights_dir_name = json_decoder.config_data["ddpg"]["weights_dir_name"]
+	ddpg_cuda = json_decoder.config_data["ddpg"]["cuda"]
+	ddpg_max_memory_size = json_decoder.config_data["ddpg"]["max_memory_size"]
+	ddpg_batch_size = json_decoder.config_data["ddpg"]["batch_size"]
+	ddpg_log_interval = json_decoder.config_data["ddpg"]["log_interval"]
+	
+	print("** DDPG PARAMETERS **")
+	print("ddpg_cuda = {}".format(ddpg_cuda))
+	print("ddpg_batch_size = {}".format(ddpg_batch_size))
+	print("ddpg_max_memory_size = {}".format(ddpg_max_memory_size))
+	print("ddpg_log_interval = {}".format(ddpg_log_interval))
+	print("weights_dir_name = {}".format(weights_dir_name))
+	
+	log_path = json_decoder.config_data["log"]["log_path"]
+	log_name = json_decoder.config_data["log"]["log_name"]
+	
+	print("** LOG PARAMETERS **")
+	print("log_path = {}".format(log_path))
+	print("log_name = {}".format(log_name))
+	
 	rank = MPI.COMM_WORLD.Get_rank()
     
 	if MPI.COMM_WORLD.Get_rank() == 0:
-		if not os.path.isdir(directory):
-			os.makedirs(directory)
+		if not os.path.isdir(weights_dir_name):
+			os.makedirs(weights_dir_name)
 		if not os.path.isdir(generate_path_databases):
 			os.makedirs(generate_path_databases)
 		if not os.path.isdir(load_path_databases):
 			os.makedirs(load_path_databases)
+		if not os.path.isdir(log_path):
+			os.makedirs(log_path)
     
-	if not os.path.isfile(load_path_databases + args.load_database_name):
-		raise RuntimeError("=> Database file to load does not exit : " + load_path_databases + args.load_database_name)
-		return        
-	
-	
-	env_pybullet = Environment(time_step=args.time_step, gui=args.gui)
+	if not os.path.isfile(load_path_databases + load_database_name):
+		raise RuntimeError("=> Database file to load does not exit : " + load_path_databases + load_database_name)
+		return
+		
+	if rank == 0:
+		file_log = open(log_path + log_name, "w+")
+		
+	env_pybullet = Environment(json_decoder=json_decoder, gui=args.gui)
 	env_pybullet.reset()
-	db = Database_Frite(path_load=load_path_databases, load_name=args.load_database_name, generate_name=args.generate_database_name, path_generate=generate_path_databases, nb_x=args.db_nb_x, nb_y=args.db_nb_y, nb_z=args.db_nb_z, db_nb_random_goal=args.db_nb_random_goal, type_db=args.type_db)
-	env = gym.make(args.env_name, database=db, distance_threshold=args.distance_threshold, gui=args.gui, E=args.E, env_pybullet=env_pybullet, time_set_action=args.time_set_action)
+	db = Database_Frite(json_decoder=json_decoder)
+	env = gym.make(env_name, database=db, json_decoder = json_decoder, env_pybullet=env_pybullet, gui=args.gui)
 
-	env.seed(args.random_seed + MPI.COMM_WORLD.Get_rank())
-	torch.manual_seed(args.random_seed + MPI.COMM_WORLD.Get_rank())
-	np.random.seed(args.random_seed + MPI.COMM_WORLD.Get_rank())
+	env.seed(env_random_seed + MPI.COMM_WORLD.Get_rank())
+	torch.manual_seed(env_random_seed + MPI.COMM_WORLD.Get_rank())
+	np.random.seed(env_random_seed + MPI.COMM_WORLD.Get_rank())
     
-	if (args.cuda):
-		torch.cuda.manual_seed(args.random_seed + MPI.COMM_WORLD.Get_rank())
+	if (ddpg_cuda):
+		torch.cuda.manual_seed(env_random_seed + MPI.COMM_WORLD.Get_rank())
     
-	agent = DDPGagent(args.cuda, env, max_memory_size=args.max_memory_size, directory=directory)
+	agent = DDPGagent(ddpg_cuda, env, max_memory_size=ddpg_max_memory_size, directory=weights_dir_name)
 	noise = OUNoise(env.action_space)
     
 	list_global_rewards = []
     
 	if args.mode == 'test':
+		start=datetime.now()
+		
+		file_log.write("mode test !\n")
+		
 		print("mode test !")
+		
 		agent.load()
-		n_episodes = 100
-		n_steps = 10
+		n_episodes = json_decoder.config_data["env_test"]["n_episodes"]
+		n_steps = json_decoder.config_data["env_test"]["n_steps"]
+		do_reset_env = json_decoder.config_data["env"]["do_reset_env"]
+		wait_time_sleep_after_draw_env_box = json_decoder.config_data["env_test"]["wait_time_sleep_after_draw_env_box"]
+		wait_time_sleep_end_episode = json_decoder.config_data["env_test"]["wait_time_sleep_end_episode"]
+		do_episode_hit_return = json_decoder.config_data["env_test"]["do_episode_hit_return"]
+		
+		file_log.write("** ENV MODE TEST **\n")
+		file_log.write("n_episodes = {}\n".format(n_episodes))
+		file_log.write("n_steps = {}\n".format(n_steps))
+		file_log.write("do_reset_env = {}\n".format(do_reset_env))
+		file_log.write("wait_time_sleep_after_draw_env_box = {}\n".format(wait_time_sleep_after_draw_env_box))
+		file_log.write("wait_time_sleep_end_episode = {}\n".format(wait_time_sleep_end_episode))
+		file_log.write("do_episode_hit_return = {}\n".format(do_episode_hit_return))
+		
+		print("** ENV MODE TEST **")
+		print("n_episodes = {}".format(n_episodes))
+		print("n_steps = {}".format(n_steps))
+		print("do_reset_env = {}".format(do_reset_env))
+		print("wait_time_sleep_after_draw_env_box = {}".format(wait_time_sleep_after_draw_env_box))
+		print("wait_time_sleep_end_episode = {}".format(wait_time_sleep_end_episode))
+		print("do_episode_hit_return = {}".format(do_episode_hit_return))
+				
 		nb_dones = 0
 		sum_distance_error = 0
 		for episode in range(n_episodes):
 			print("Episode : {}".format(episode))
+			file_log.write("Episode : {}\n".format(episode))
 		   
+			if do_reset_env:
+				print("RESET !")
+				file_log.write("RESET !\n")
+				env.reset_env()
+			
 			state = env.reset()
+				
 			if (args.gui):
 			   env.draw_env_box()
-			   time.sleep(0.5)
+			   time.sleep(wait_time_sleep_after_draw_env_box)
+			   
 			current_distance_error = 0
+			
 			for step in range(n_steps):
 				action = agent.get_action(state)
+				
 				print("action={}".format(action))
+				file_log.write("action = {}\n".format(action))
 			   
 				new_state, reward, done, info = env.step(action)
 				current_distance_error = info['mean_distance_error']
 				if (args.gui):
 					env.draw_id_to_follow()
 				
-				print("step={}, distance_error={}".format(step,info['mean_distance_error']))
+				print("step={}, distance_error={}\n".format(step,info['mean_distance_error']))
+				file_log.write("step={}, distance_error={}\n".format(step,info['mean_distance_error']))
+				
 				#print("step={}, action={}, reward={}, done={}, info={}".format(step,action,reward, done, info))
 				state = new_state
 			   
 				if done:
 				   print("done with step={}  !".format(step))
+				   file_log.write("done with step={}  !\n".format(step))
+				   
 				   nb_dones+=1
 				   break
+				   
 			if (args.gui):
-				#time.sleep(0.75)
-				input("hit return to continue !")
+				if do_episode_hit_return:
+					input("hit return to continue !")
+				else:
+					time.sleep(wait_time_sleep_end_episode)
 			
 		   
 			sum_distance_error += current_distance_error
-		print("time_set_action = {}".format(args.time_set_action))
+		print("time_set_action = {}".format(env_time_set_action))
 		print("nb dones = {}".format(nb_dones))
 		print("mean distance error = {}".format(sum_distance_error/n_episodes))
 		print("sum distance error = {}".format(sum_distance_error))
+		print("time elapsed = {}".format(datetime.now()-start))
+		
+		file_log.write("time_set_action = {}\n".format(env_time_set_action))
+		file_log.write("nb dones = {}\n".format(nb_dones))
+		file_log.write("mean distance error = {}\n".format(sum_distance_error/n_episodes))
+		file_log.write("sum distance error = {}\n".format(sum_distance_error))
+		file_log.write("time elapsed = {}\n".format(datetime.now()-start))
+		
+		file_log.close()
+		
+		input("hit return !")
 		
 	elif args.mode == 'train':
 		start=datetime.now()
-		#print("begin mode train !")
-		total_step = 0
+		
+		n_episodes = json_decoder.config_data["env_train"]["n_episodes"]
+		n_steps = json_decoder.config_data["env_train"]["n_steps"]
+		do_reset_env = json_decoder.config_data["env"]["do_reset_env"]
+		
+		print("** ENV MODE TRAIN **")
+		print("n_episodes = {}".format(n_episodes))
+		print("n_steps = {}".format(n_steps))
+		print("do_reset_env = {}".format(do_reset_env))
+		
+		if rank == 0:
+			file_log.write("** ENV MODE TRAIN **\n")
+			file_log.write("n_episodes = {}\n".format(n_episodes))
+			file_log.write("n_steps = {}\n".format(n_steps))
+			file_log.write("do_reset_env = {}\n".format(do_reset_env))
+		
 		global_step_number = 0
-		update_every_n_steps = 20
-		for episode in range(args.max_episode):
+		
+		for episode in range(n_episodes):
 			#print("** rank {}, episode {}".format(rank,episode))
+			if do_reset_env:
+				env.reset_env()
+			
 			state = env.reset()
-			env.draw_env_box()
+				
+			if (args.gui):
+			   env.draw_env_box()
+			   
 			noise.reset()
 			episode_reward = 0
-			for step in range(args.max_step):
+			for step in range(n_steps):
 				action = agent.get_action(state)
 				action = noise.get_action(action, step)
 				new_state, reward, done, info = env.step(action) 
 				agent.memory.push(state, action, reward, new_state, done)
 				global_step_number += 1
 
-				if len(agent.memory) > args.batch_size:
-					agent.update(args.batch_size)
+				if len(agent.memory) > ddpg_batch_size:
+					agent.update(ddpg_batch_size)
 
 				state = new_state
 				episode_reward += reward
@@ -187,14 +273,19 @@ def main():
 			list_global_rewards.append(global_reward)
 			
 			if rank == 0:
-				print('=> [{}] episode is: {}, eval success rate is: {:.3f}'.format(datetime.now(), episode, list_global_rewards[episode])) 
-				if episode % args.log_interval == 0:
+				print('=> [{}] episode is: {}, eval success rate is: {:.3f}'.format(datetime.now(), episode, list_global_rewards[episode]))
+				file_log.write('=> [{}] episode is: {}, eval success rate is: {:.3f}\n'.format(datetime.now(), episode, list_global_rewards[episode])) 
+				
+				if episode % ddpg_log_interval == 0:
 					agent.save()
 				  
 		if rank == 0:          
 		   agent.save()
 		   print("end mode train !")
 		   print("time elapsed = {}".format(datetime.now()-start))
+		   file_log.write("end mode train !\n")
+		   file_log.write("time elapsed = {}\n".format(datetime.now()-start))
+		   file_log.close()
 		
 		
 	elif args.mode == 'debug_cartesian':	
@@ -283,7 +374,7 @@ def main():
 			   
 	else:
 		raise NameError("mode wrong!!!")
-        
+    
         
 if __name__ == '__main__':
 	main()

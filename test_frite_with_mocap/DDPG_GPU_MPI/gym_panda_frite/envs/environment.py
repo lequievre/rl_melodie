@@ -6,12 +6,17 @@ import os, inspect
 
 class Environment():
 	
-	def __init__(self, time_step = 0.001, gui = True):
-		self.time_step = time_step
-		self.n_substeps = 20
+	def __init__(self, json_decoder=None, gui = True):
+		
+		if json_decoder==None:
+			raise RuntimeError("=> Environment class need a JSON Decoder, to get some parameters !!!")
+			return
+			
+		self.time_step = json_decoder.config_data["env"]["time_step"]
+		self.n_substeps = json_decoder.config_data["env"]["n_substeps"]
 		self.gui = gui
 		
-		self.time_step_sleep = 0.001
+		self.time_step_sleep = json_decoder.config_data["env"]["time_step_sleep"]
 		self.running = False
 		
 		p.connect(p.GUI if self.gui else p.DIRECT)

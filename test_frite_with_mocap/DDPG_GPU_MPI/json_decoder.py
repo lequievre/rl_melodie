@@ -8,7 +8,7 @@ class JsonDecoder():
 
 		if not os.path.isfile(self.config_file):
 			raise RuntimeError("=> Config file JSON to load does not exit : " + self.config_file)
-		return 
+			return 
 
 		self.load_config()
 
@@ -20,6 +20,7 @@ class JsonDecoder():
 	def print_config(self):
 		print(self.config_data)
 		
-		
+	"""	
 	def has_key(self, key_name=None):
 		return key_name in self.config_data
+	"""

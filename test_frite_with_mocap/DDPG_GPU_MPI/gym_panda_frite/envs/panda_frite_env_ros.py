@@ -28,15 +28,21 @@ from gym_panda_frite.envs.debug_gui import Debug_Gui
 
 class PandaFriteEnvROS(gym.Env):
 	
-	def __init__(self, database = None, distance_threshold = None, gui = None, E = None, env_pybullet = None, time_set_action = 30):
+	def __init__(self, database = None, json_decoder = None, env_pybullet = None, gui = None):
 		
-		print("****** ROSSSSSSSSSS !!!! ************")
+		if json_decoder==None:
+			raise RuntimeError("=> PandaFriteEnvROS class need a JSON Decoder, to get some parameters !!!")
+			return
+	
+		print("****** PandaFriteEnvROS !!!! ************")
 		
+		self.gui = gui
 		self.database = database
 		self.debug_lines_gripper_array = [0, 0, 0, 0]
 		
-		self.E = E
-		self.time_set_action = time_set_action
+		self.E = json_decoder.config_data["env"]["E"]
+		self.time_set_action = json_decoder.config_data["env"]["time_set_action"]
+		self.distance_threshold = json_decoder.config_data["env"]["distance_threshold"]
 		
 		# bullet env parameters + thread time_step
 		self.env_pybullet = env_pybullet
@@ -122,8 +128,6 @@ class PandaFriteEnvROS(gym.Env):
 		
 		self.debug_gui = Debug_Gui(env = self)
 		
-		self.distance_threshold=distance_threshold
-		
 		#print("PandaFriteEnv distance_threshold = {}".format(self.distance_threshold))
 		
 		self.seed()
@@ -169,7 +173,9 @@ class PandaFriteEnvROS(gym.Env):
 		self.database.set_env(self)
 		self.database.load()
 		
-		self.reset(use_frite=True)
+		
+		self.reset_env(use_frite=True)
+		self.reset()
 		
 		self.panda_list_lower_limits, self.panda_list_upper_limits, self.panda_list_joint_ranges, self.panda_list_initial_poses = self.get_panda_joint_ranges()
 			 
@@ -1269,8 +1275,7 @@ class PandaFriteEnvROS(gym.Env):
 		# p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, self.if_render) enble if want to control rendering 
 		return obs, reward, done, info
 		
-	def reset(self, use_frite=True):	
-		
+	def reset_env(self, use_frite=True):
 		self.debug_gui.reset()
 		
 		self.env_pybullet.reset()
@@ -1311,14 +1316,14 @@ class PandaFriteEnvROS(gym.Env):
 			self.create_anchor_panda()
 			#p.stepSimulation()
 		
-		
+	def reset(self):
 		# sample a new goal
 		self.goal = self.sample_goal()
 		#p.stepSimulation()
 		
-		# draw goal
-		self.draw_goal()
-		#p.stepSimulation()
+		if self.gui:
+			# draw goal
+			self.draw_goal()
 		
 		return self.get_obs()
 		
