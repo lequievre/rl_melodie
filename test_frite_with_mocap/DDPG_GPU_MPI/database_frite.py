@@ -6,20 +6,33 @@ import math
 import time
 
 class Database_Frite:
-	def __init__(self, path_load, load_name, path_generate, generate_name, nb_x=10, nb_y=30, nb_z=10, db_nb_random_goal=250, type_db=0):
+	def __init__(self, json_decoder=None):
 		
-		self.load_name = load_name
-		self.generate_name = generate_name
-		self.path_load = path_load
-		self.path_generate = path_generate
-		self.db_nb_random_goal = db_nb_random_goal
+		if json_decoder==None:
+			raise RuntimeError("=> Database_Frite class need a JSON Decoder, to get some parameters !!!")
+			return
+		
+		root_path_databases = json_decoder.config_data["database"]["root_path_databases"]
+		generate_db_dir_name = json_decoder.config_data["database"]["generate_db_dir_name"]
+		load_db_dir_name = json_decoder.config_data["database"]["load_db_dir_name"]
+		load_database_name = json_decoder.config_data["database"]["load_database_name"]
+		generate_database_name = json_decoder.config_data["database"]["generate_database_name"]
+		
+		generate_path_databases = root_path_databases + generate_db_dir_name
+		load_path_databases = root_path_databases + load_db_dir_name
+			
+		self.load_name = load_database_name
+		self.generate_name = generate_database_name
+		self.path_load = load_path_databases
+		self.path_generate = generate_path_databases
+		self.db_nb_random_goal = json_decoder.config_data["database"]["db_nb_random_goal"]
 		
 		# type of db , 0 = classic, 1 = random, 2 = mocap
-		self.type_db = type_db
+		self.type_db = json_decoder.config_data["database"]["type_db"]
 		
-		self.nb_x = nb_x
-		self.nb_y = nb_y
-		self.nb_z = nb_z
+		self.nb_x = json_decoder.config_data["database"]["db_nb_x"]
+		self.nb_y = json_decoder.config_data["database"]["db_nb_y"]
+		self.nb_z = json_decoder.config_data["database"]["db_nb_z"]
 		
 		self.nb_lines = 0
 		self.nb_deformations = 0
@@ -34,6 +47,35 @@ class Database_Frite:
 		self.env = env
 		self.nb_points = len(self.env.id_frite_to_follow)
 	
+	
+	def debug_point(self, pt, offset = 0.1, width = 3.0, color = [1, 0, 0]):
+		
+		p.addUserDebugLine(lineFromXYZ          = [pt[0]+offset, pt[1], pt[2]]  ,
+						   lineToXYZ            = [pt[0]-offset, pt[1], pt[2]],
+						   lineColorRGB         = color  ,
+						   lineWidth            = width        ,
+						   lifeTime             = 0          )
+						   
+		p.addUserDebugLine(lineFromXYZ          = [pt[0], pt[1]+offset, pt[2]]  ,
+						   lineToXYZ            = [pt[0], pt[1]-offset, pt[2]],
+						   lineColorRGB         = color  ,
+						   lineWidth            = width        ,
+						   lifeTime             = 0          )
+						   
+	
+	
+	def debug_all_points(self):
+		for i in range(self.nb_deformations):
+			for j in range(self.nb_points):
+				self.debug_point(pt=self.data[i,j], offset=0.01)
+			
+	
+	
+	def debug_all_random_points(self, nb):
+		for i in range(nb):
+			a_pt = self.get_random_targets()
+			for j in range(self.nb_points):
+				self.debug_point(pt = a_pt[j], offset =0.01, color = [0, 0, 1])
 	
 	def print_config(self):
 		self.init_spaces()
@@ -86,40 +128,7 @@ class Database_Frite:
 		
 		print("step_x={}, step_y={}, step_z={}".format(self.step_x,self.step_y,self.step_z))
 			
-
-	def debug_point(self, pt, offset = 0.1, width = 3.0, color = [1, 0, 0]):
 		
-		#print(pt)
-		p.addUserDebugLine(lineFromXYZ          = [pt[0]+offset, pt[1], pt[2]]  ,
-						   lineToXYZ            = [pt[0]-offset, pt[1], pt[2]],
-						   lineColorRGB         = color  ,
-						   lineWidth            = width        ,
-						   lifeTime             = 0          )
-						   
-		p.addUserDebugLine(lineFromXYZ          = [pt[0], pt[1]+offset, pt[2]]  ,
-						   lineToXYZ            = [pt[0], pt[1]-offset, pt[2]],
-						   lineColorRGB         = color  ,
-						   lineWidth            = width        ,
-						   lifeTime             = 0          )
-						   
-	
-	
-	def debug_all_points(self):
-		for i in range(self.nb_deformations):
-			for j in range(self.nb_points):
-				#for k in range(self.
-				self.debug_point(pt=self.data[i,j], offset=0.01)
-				p.stepSimulation()
-			
-	
-	
-	def debug_all_random_points(self, nb):
-		for i in range(nb):
-			a_pt = self.get_random_targets()
-			for j in range(self.nb_points):
-				self.debug_point(pt = a_pt[j], offset =0.01, color = [0, 0, 1])
-		
-			
 	def get_random_targets(self):
 		if self.data is not None:
 			index = random.randint(self.nb_deformations-1)
