@@ -88,8 +88,10 @@ class PandaFriteEnvROS(gym.Env):
 		#   vv
 		# [9, 6] (TIP)
 		#self.id_frite_to_follow = [ [31, 15], [13, 10], [18, 14], [9, 6] ]  # left then right  [left, right], [left,right] ...
-		self.id_frite_to_follow = [ [31, 15], [13, 10], [18, 14], [28, 53] ]  # left then right  [left, right], [left,right] ...
+		# -> self.id_frite_to_follow = [ [31, 15], [13, 10], [18, 14], [28, 53] ]  # left then right  [left, right], [left,right] ...
 		#self.id_frite_to_follow = [ [31, 15], [47, 33], [18, 14], [28, 53] ]  # left then right  [left, right], [left,right] ...
+		
+		self.id_frite_to_follow = self.json_decoder.config_data["env"]["id_frite_to_follow"]
 		
 		# Points from bottom to up, on the same plane of id_frite_to _follow, one level under ((on the front side)
 		# [63, 38] (under)
@@ -111,8 +113,10 @@ class PandaFriteEnvROS(gym.Env):
 		# [23, 32] (under)
 		# [28, 53] (under)
 		# [9, 6] (TIP)
-		self.under_id_frite_to_follow = [ [63, 38], [58, 54], [42, 37], [23, 32] ]  # left then right  [left, right], [left,right] ...
+		# -> self.under_id_frite_to_follow = [ [63, 38], [58, 54], [42, 37], [23, 32] ]  # left then right  [left, right], [left,right] ...
 		#self.under_id_frite_to_follow = [ [63, 38], [64, 45], [42, 37], [23, 32] ]  # left then right  [left, right], [left,right] ...
+		
+		self.under_id_frite_to_follow = self.json_decoder.config_data["env"]["under_id_frite_to_follow"]
 		
 		
 		# array containing the upper mean point shifted by a normalized normal vector
@@ -840,8 +844,9 @@ class PandaFriteEnvROS(gym.Env):
 	
 	def set_gym_spaces(self):
 		panda_eff_state = p.getLinkState(self.panda_id, self.panda_end_eff_idx)
+		
 		"""
-		# MEDIUM
+		# LARGE
 		low_marge = 0.1
 		low_x_down = panda_eff_state[0][0]-1.5*low_marge
 		low_x_up = panda_eff_state[0][0]+0.5*low_marge
@@ -854,8 +859,9 @@ class PandaFriteEnvROS(gym.Env):
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
 		"""
+		
 		"""
-		# SMALL
+		# MEDIUM
 		low_marge = 0.1
 		low_x_down = panda_eff_state[0][0]-1.5*low_marge
 		low_x_up = panda_eff_state[0][0]+0.5*low_marge
@@ -870,7 +876,7 @@ class PandaFriteEnvROS(gym.Env):
 		"""
 		
 		"""
-		# EXTRA EXTRA SMALL
+		# EXTRA SMALL
 		low_marge = 0.1
 		low_x_down = panda_eff_state[0][0]-0.5*low_marge
 		low_x_up = panda_eff_state[0][0]+0.25*low_marge
@@ -883,10 +889,10 @@ class PandaFriteEnvROS(gym.Env):
 		z_low_marge = 0.10
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
+		"""
 		
-		
-		
-		# EXTRA SMALL
+		"""
+		# SMALL
 		low_marge = 0.1
 		low_x_down = panda_eff_state[0][0]-1.0*low_marge
 		low_x_up = panda_eff_state[0][0]+0.5*low_marge
@@ -902,8 +908,9 @@ class PandaFriteEnvROS(gym.Env):
 		
 		self.goal_space = spaces.Box(low=np.array([low_x_down, low_y_down ,low_z_down]), high=np.array([low_x_up, low_y_up ,low_z_up]))
 		#print("frite env goal space = {}".format(self.goal_space))
+		"""
 		
-		
+		"""
 		# POSE LARGE
 		low_marge = 0.1
 		low_x_down = panda_eff_state[0][0]-2*low_marge
@@ -916,8 +923,10 @@ class PandaFriteEnvROS(gym.Env):
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
 		
+		"""
 		
-		# POSE EXTRA SMALL
+		"""
+		# POSE SMALL
 		low_marge = 0.1
 		low_x_down = panda_eff_state[0][0]-1.0*low_marge
 		low_x_up = panda_eff_state[0][0]+0.5*low_marge
@@ -930,10 +939,10 @@ class PandaFriteEnvROS(gym.Env):
 		#z_low_marge = 0.10
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
+		"""
 	
-	
-		
-		# POSE SMALL
+		"""
+		# POSE MEDIUM
 		low_marge = 0.1
 		low_x_down = panda_eff_state[0][0]-1.5*low_marge
 		low_x_up = panda_eff_state[0][0]+0.75*low_marge
@@ -947,12 +956,15 @@ class PandaFriteEnvROS(gym.Env):
 		low_z_up = panda_eff_state[0][2]
 		"""
 		
+		goal_index = self.json_decoder.config_data["env"]["gym_spaces"]["goal"]
 		
-		goal_x_up = self.json_decoder.config_data["env"]["gym_spaces"]["goal"]["x_up"]
-		goal_x_down = self.json_decoder.config_data["env"]["gym_spaces"]["goal"]["x_down"]
-		goal_y_up = self.json_decoder.config_data["env"]["gym_spaces"]["goal"]["y_up"]
-		goal_y_down = self.json_decoder.config_data["env"]["gym_spaces"]["goal"]["y_down"]
-		goal_z_down = self.json_decoder.config_data["env"]["gym_spaces"]["goal"]["z_down"]
+		goal_x_up = self.json_decoder.config_data["env"]["gym_spaces"]["spaces"][goal_index]["x_up"]
+		goal_x_down = self.json_decoder.config_data["env"]["gym_spaces"]["spaces"][goal_index]["x_down"]
+		goal_y_up = self.json_decoder.config_data["env"]["gym_spaces"]["spaces"][goal_index]["y_up"]
+		goal_y_down = self.json_decoder.config_data["env"]["gym_spaces"]["spaces"][goal_index]["y_down"]
+		goal_z_down = self.json_decoder.config_data["env"]["gym_spaces"]["spaces"][goal_index]["z_down"]
+		
+		#print("goal_x_up={},goal_x_down={},goal_y_up={},goal_y_down={},goal_z_down={}".format(goal_x_up,goal_x_down,goal_y_up,goal_y_down,goal_z_down))
 		
 		
 		low_x_down = panda_eff_state[0][0]-goal_x_down
@@ -968,11 +980,16 @@ class PandaFriteEnvROS(gym.Env):
 		self.goal_space = spaces.Box(low=np.array([low_x_down, low_y_down ,low_z_down]), high=np.array([low_x_up, low_y_up ,low_z_up]))
 		
 		
-		pose_x_up = self.json_decoder.config_data["env"]["gym_spaces"]["pose"]["x_up"]
-		pose_x_down = self.json_decoder.config_data["env"]["gym_spaces"]["pose"]["x_down"]
-		pose_y_up = self.json_decoder.config_data["env"]["gym_spaces"]["pose"]["y_up"]
-		pose_y_down = self.json_decoder.config_data["env"]["gym_spaces"]["pose"]["y_down"]
-		pose_z_down = self.json_decoder.config_data["env"]["gym_spaces"]["pose"]["z_down"]
+		pose_index = self.json_decoder.config_data["env"]["gym_spaces"]["pose"]
+		
+		pose_x_up = self.json_decoder.config_data["env"]["gym_spaces"]["spaces"][pose_index]["x_up"]
+		pose_x_down = self.json_decoder.config_data["env"]["gym_spaces"]["spaces"][pose_index]["x_down"]
+		pose_y_up = self.json_decoder.config_data["env"]["gym_spaces"]["spaces"][pose_index]["y_up"]
+		pose_y_down = self.json_decoder.config_data["env"]["gym_spaces"]["spaces"][pose_index]["y_down"]
+		pose_z_down = self.json_decoder.config_data["env"]["gym_spaces"]["spaces"][pose_index]["z_down"]
+		
+		
+		#print("pose_x_up={},pose_x_down={},pose_y_up={},pose_y_down={},pose_z_down={}".format(pose_x_up,pose_x_down,pose_y_up,pose_y_down,pose_z_down))
 		
 		
 		low_x_down = panda_eff_state[0][0]-pose_x_down
@@ -994,7 +1011,17 @@ class PandaFriteEnvROS(gym.Env):
 		# observation = 30 float -> see function _get_obs
 		self.observation_space = spaces.Box(np.finfo(np.float32).min, np.finfo(np.float32).max, shape=(30,), dtype=np.float32)
 
+	
+	def get_position_id_frite(self):
+		data = p.getMeshData(self.frite_id, -1, flags=p.MESH_DATA_SIMULATION_MESH)
 		
+		pos_list = []
+
+		for i in range(len(self.id_frite_to_follow)):
+			pos_list.append(data[1][self.id_frite_to_follow[i]])
+		
+		return pos_list
+			
 	def get_panda_joint_ranges(self):
 		list_lower_limits, list_upper_limits, list_joint_ranges, list_initial_poses = [], [], [], []
 
@@ -1233,7 +1260,7 @@ class PandaFriteEnvROS(gym.Env):
 		jointPoses = p.calculateInverseKinematics(self.panda_id, self.panda_end_eff_idx, new_pos, cur_orien)[0:7]
 		
 		for i in range(len(jointPoses)):
-			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=10 * 240.)
+			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=100 * 240.)
 			
 		
 	def set_action(self, action):

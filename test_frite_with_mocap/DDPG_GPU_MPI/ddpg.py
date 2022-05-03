@@ -5,6 +5,7 @@ import torch.nn as nn
 from models import *
 from utils import *
 from mpi4py import MPI
+import numpy as np
 
 
 # hidden_size=256
@@ -63,10 +64,10 @@ class DDPGagent:
     def update(self, batch_size):
         states_batch, actions_batch, rewards_batch, next_states_batch, dones_batch = self.memory.sample(batch_size)
         
-        states = torch.FloatTensor(states_batch)
-        actions = torch.FloatTensor(actions_batch)
-        rewards = torch.FloatTensor(rewards_batch)
-        next_states = torch.FloatTensor(next_states_batch)
+        states = torch.FloatTensor(np.array(states_batch))
+        actions = torch.FloatTensor(np.array(actions_batch))
+        rewards = torch.FloatTensor(np.array(rewards_batch))
+        next_states = torch.FloatTensor(np.array(next_states_batch))
         dones = torch.from_numpy(np.vstack(dones_batch)).float()
         
         if self.cuda:

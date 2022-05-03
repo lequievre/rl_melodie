@@ -13,26 +13,30 @@ class Database_Frite:
 			return
 		
 		root_path_databases = json_decoder.config_data["database"]["root_path_databases"]
-		generate_db_dir_name = json_decoder.config_data["database"]["generate_db_dir_name"]
-		load_db_dir_name = json_decoder.config_data["database"]["load_db_dir_name"]
-		load_database_name = json_decoder.config_data["database"]["load_database_name"]
-		generate_database_name = json_decoder.config_data["database"]["generate_database_name"]
 		
+		generate_db_dir_name = json_decoder.config_data["database"]["generate"]["dir_name"]
+		generate_database_name = json_decoder.config_data["database"]["generate"]["database_name"]
 		generate_path_databases = root_path_databases + generate_db_dir_name
+		
+		load_db_dir_name = json_decoder.config_data["database"]["load"]["dir_name"]
+		load_database_name = json_decoder.config_data["database"]["load"]["database_name"]
 		load_path_databases = root_path_databases + load_db_dir_name
 			
 		self.load_name = load_database_name
 		self.generate_name = generate_database_name
 		self.path_load = load_path_databases
 		self.path_generate = generate_path_databases
-		self.db_nb_random_goal = json_decoder.config_data["database"]["db_nb_random_goal"]
+		self.db_nb_random_goal = json_decoder.config_data["database"]["generate"]["nb_random_goal"]
 		
 		# type of db , 0 = classic, 1 = random, 2 = mocap
-		self.type_db = json_decoder.config_data["database"]["type_db"]
+		self.type_db_generate = json_decoder.config_data["database"]["generate"]["type_db"]
+		self.type_db_load = json_decoder.config_data["database"]["load"]["type_db"]
 		
-		self.nb_x = json_decoder.config_data["database"]["db_nb_x"]
-		self.nb_y = json_decoder.config_data["database"]["db_nb_y"]
-		self.nb_z = json_decoder.config_data["database"]["db_nb_z"]
+		self.nb_x = json_decoder.config_data["database"]["generate"]["nb_x"]
+		self.nb_y = json_decoder.config_data["database"]["generate"]["nb_y"]
+		self.nb_z = json_decoder.config_data["database"]["generate"]["nb_z"]
+		
+		self.time_action = json_decoder.config_data["env"]["time_set_action"]
 		
 		self.nb_lines = 0
 		self.nb_deformations = 0
@@ -77,13 +81,13 @@ class Database_Frite:
 			for j in range(self.nb_points):
 				self.debug_point(pt = a_pt[j], offset =0.01, color = [0, 0, 1])
 	
-	def print_config(self):
+	def print_config_generate(self):
 		self.init_spaces()
 		
-		if self.type_db==1:
+		if self.type_db_generate==1:
 			print("RANDOM DB !")
 			print("db_nb_random_goal = {}".format(self.db_nb_random_goal))
-		elif self.type_db==0:
+		elif self.type_db_generate==0:
 			print("CLASSIC DB !")
 			d_x = self.goal_high[0] - self.goal_low[0]
 			d_y = self.goal_high[1] - self.goal_low[1]
@@ -96,10 +100,6 @@ class Database_Frite:
 			print("range_x={}, range_y={}, range_z={}".format(self.range_x,self.range_y,self.range_z))
 			print("delta_x={}, delta_y={}".format(self.delta_x,self.delta_y))
 			print("**************************************")
-		elif self.type_db==2:
-			print("MOCAP DB !")
-			print("db_nb_random_goal = {}".format(self.db_nb_random_goal))
-		
 		
 	
 	def init_spaces(self):
@@ -115,6 +115,8 @@ class Database_Frite:
 		self.step_x = float((self.goal_high[0]-self.goal_low[0])/(self.nb_x +1))
 		self.step_y = float((self.goal_high[1]-self.goal_low[1])/(self.nb_y + 1))
 		self.step_z = float((self.goal_high[2]-self.goal_low[2])/(self.nb_z + 1))
+		
+		print("step_x={}, step_y={}, step_z={}".format(self.step_x,self.step_y,self.step_z))
 		
 		
 		self.delta_x = math.ceil((self.gripper_position[0]-self.goal_low[0])/self.step_x)
@@ -138,12 +140,12 @@ class Database_Frite:
 			return None
 	
 	def load(self):
-		if self.type_db==0:
-			self.load_classic()
-		elif self.type_db==1:
-			self.load_random()
-		elif self.type_db==2:
+		if self.type_db_load==0 or self.type_db_load==1:
+			self.load()
+		elif self.type_db_load==2:
 			self.load_mocap()
+		else:
+			raise RuntimeError("=> Can load classic (type_db=0) or random db (type_db=1) or mocap db (type_db=2) !!!")
 	
 	
 	def load_mocap(self):
@@ -174,7 +176,7 @@ class Database_Frite:
 					poses_mocap_array[i][1] = y
 					poses_mocap_array[i][2] = z
 				
-				print("poses_mocap_array = {}, orientation_base_frame_array = {}".format(poses_mocap_array,orientation_base_frame_array ))	
+				#print("poses_mocap_array = {}, orientation_base_frame_array = {}".format(poses_mocap_array,orientation_base_frame_array ))	
 				poses_mocap_array_in_arm_frame = self.env.transform_mocap_poses_to_arm_poses(poses_mocap_array, orientation_base_frame_array)
 				
 				for i in reversed(range(4)):
@@ -190,9 +192,7 @@ class Database_Frite:
 		print("shape = {}".format(self.data.shape))	
 		print(self.data[0,0])
 		
-				
-		
-	def load_random(self):
+	def load(self):
 		f = open(self.path_load + self.load_name)
 		total_list = []
 		for line in f.readlines():
@@ -203,7 +203,6 @@ class Database_Frite:
 			total_list.append(float(line_split[4])) #y shifted
 			total_list.append(float(line_split[5]))	#z shifted
 
-		
 		self.nb_deformations = int(self.nb_lines/self.nb_points)
 		
 		print("nb lines = {}, nb points = {}, nb_deformations = {}".format(self.nb_lines, self.nb_points,self.nb_deformations))
@@ -213,54 +212,34 @@ class Database_Frite:
 		print("shape = {}".format(self.data.shape))	
 		print(self.data[0,0])
 		
-	def load_classic(self):
-		f = open(self.path_load + self.load_name)
-		total_list = []
-		for line in f.readlines():
-			self.nb_lines+=1
-			line_split = line.split()
-			total_list.append(float(line_split[1])) #x
-			total_list.append(float(line_split[2])) #y
-			total_list.append(float(line_split[3]))	#z
-
-		
-		self.nb_deformations = int(self.nb_lines/self.nb_points)
-		
-		print("nb lines = {}, nb points = {}, nb_deformations = {}".format(self.nb_lines, self.nb_points,self.nb_deformations))
-		self.data = np.array(total_list).reshape(self.nb_deformations, self.nb_points, 3)
-		
-		
-		print("shape = {}".format(self.data.shape))	
-		print(self.data[0,0])
-			
-		#print("id={}, x={}, y={}, z={}".format(int(line_split[0]), float(line_split[1]), float(line_split[2]), float(line_split[3])))
-		
-		
-	def write_floats(self, f):
-		list_id_frite = self.env.get_position_id_frite()
-		ids_frite = self.env.id_frite_to_follow
-		
-		for k in range(len(list_id_frite)):
-			f.write("{} {:.3f} {:.3f} {:.3f}\n".format(ids_frite[k], list_id_frite[k][0],  list_id_frite[k][1], list_id_frite[k][2]))
 	
+	def write_floats(self, f):
+		self.env.compute_mesh_pos_to_follow(draw_normal=False)
+		for k in range(len(self.env.position_mesh_to_follow)):
+			f.write("{:.3f} {:.3f} {:.3f} {:.3f} {:.3f} {:.3f}\n".format(self.env.mean_position_to_follow[k][0], self.env.mean_position_to_follow[k][1], self.env.mean_position_to_follow[k][2], self.env.position_mesh_to_follow[k][0],  self.env.position_mesh_to_follow[k][1], self.env.position_mesh_to_follow[k][2]))
+
 	def go_to_corner(self):
 		# go to corner
 		d_x_y_z= [-self.step_x, 0.0, 0.0]
 		for x in range(self.delta_x):
+			#print("x-> {}".format(d_x_y_z))
 			self.env.set_action_cartesian(d_x_y_z)
-			p.stepSimulation()
+			time.sleep(self.time_action)
 
 		d_x_y_z= [0.0, -self.step_y, 0.0]
 		for y in range(self.delta_y):
+			#print("y-> {}".format(d_x_y_z))
 			self.env.set_action_cartesian(d_x_y_z)
-			p.stepSimulation()
+			time.sleep(self.time_action)
 
 
 	def generate(self):
-		if self.type_db==0:
+		if self.type_db_generate==0:
 			self.generate_classic()
-		elif self.type_db==1:
+		elif self.type_db_generate==1:
 			self.generate_random()
+		else:
+			raise RuntimeError("=> Can generate classic (type_db=0) or random db (type_db=1) !!!")
 			
 	def generate_random(self):
 		print("->Open database file : ", self.path_generate + self.generate_name , " !")
@@ -273,17 +252,10 @@ class Database_Frite:
 			print("-> {} : Go to GOAL : {} !".format(i,a_random_goal))
 			self.env.go_to_position_simulated(a_random_goal)
 			print("-> Goal OK !")
-			time.sleep(30)
-			print("->Compute mesh pos to follow !")
-			self.env.compute_mesh_pos_to_follow(draw_normal=True)
-			#input("Press Enter to continue !")
-			print("->Write pos into database file !")
-			#print(self.env.mean_position_to_follow)
-			#print(self.env.position_mesh_to_follow)
+			print("->  Save value !")
+			time.sleep(self.time_action)
+			self.write_floats(f)
 			
-			for k in range(len(self.env.position_mesh_to_follow)):
-				f.write("{:.3f} {:.3f} {:.3f} {:.3f} {:.3f} {:.3f}\n".format(self.env.mean_position_to_follow[k][0], self.env.mean_position_to_follow[k][1], self.env.mean_position_to_follow[k][2], self.env.position_mesh_to_follow[k][0],  self.env.position_mesh_to_follow[k][1], self.env.position_mesh_to_follow[k][2]))
-
 		print("->Close file !")
 		f.close()
 			
@@ -302,8 +274,8 @@ class Database_Frite:
 				d_x_y_z[0] = self.step_x
 				for x in range(self.range_x):
 					self.env.set_action_cartesian(d_x_y_z)
+					time.sleep(self.time_action)
 					self.env.draw_gripper_position()
-					p.stepSimulation()
 					self.write_floats(f)
                         
             
@@ -311,8 +283,8 @@ class Database_Frite:
 				d_x_y_z = [0.0, 0.0, 0.0]
 				d_x_y_z[1] = self.step_y
 				self.env.set_action_cartesian(d_x_y_z)
+				time.sleep(self.time_action)
 				self.env.draw_gripper_position()
-				p.stepSimulation()
 				self.write_floats(f)
         
 				# advance to x min
@@ -320,16 +292,16 @@ class Database_Frite:
 				d_x_y_z[0] = -self.step_x
 				for x in range(self.range_x):
 					self.env.set_action_cartesian(d_x_y_z)
+					time.sleep(self.time_action)
 					self.env.draw_gripper_position()
-					p.stepSimulation()
 					self.write_floats(f)
         
 				# 1 shift Y
 				d_x_y_z = [0.0, 0.0, 0.0]
 				d_x_y_z[1] = self.step_y
 				self.env.set_action_cartesian(d_x_y_z)
+				time.sleep(self.time_action)
 				self.env.draw_gripper_position()
-				p.stepSimulation()
 				self.write_floats(f)
   
 			# 1 shift z

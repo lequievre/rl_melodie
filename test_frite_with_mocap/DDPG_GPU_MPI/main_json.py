@@ -40,10 +40,10 @@ def main():
 	os.environ['IN_MPI'] = '1'
 
 	root_path_databases = json_decoder.config_data["database"]["root_path_databases"]
-	generate_db_dir_name = json_decoder.config_data["database"]["generate_db_dir_name"]
-	load_db_dir_name = json_decoder.config_data["database"]["load_db_dir_name"]
-	load_database_name = json_decoder.config_data["database"]["load_database_name"]
-	generate_database_name = json_decoder.config_data["database"]["generate_database_name"]
+	generate_db_dir_name = json_decoder.config_data["database"]["generate"]["dir_name"]
+	load_db_dir_name = json_decoder.config_data["database"]["load"]["dir_name"]
+	load_database_name = json_decoder.config_data["database"]["load"]["database_name"]
+	generate_database_name = json_decoder.config_data["database"]["generate"]["database_name"]
 	
 	generate_path_databases = root_path_databases + generate_db_dir_name
 	load_path_databases = root_path_databases + load_db_dir_name
@@ -137,6 +137,7 @@ def main():
 		do_episode_hit_return = json_decoder.config_data["env_test"]["do_episode_hit_return"]
 		
 		file_log.write("** ENV MODE TEST **\n")
+		file_log.write("config_file = {}\n".format(args.config_file))
 		file_log.write("n_episodes = {}\n".format(n_episodes))
 		file_log.write("n_steps = {}\n".format(n_steps))
 		file_log.write("do_reset_env = {}\n".format(do_reset_env))
@@ -233,6 +234,7 @@ def main():
 		
 		if rank == 0:
 			file_log.write("** ENV MODE TRAIN **\n")
+			file_log.write("config_file = {}\n".format(args.config_file))
 			file_log.write("n_episodes = {}\n".format(n_episodes))
 			file_log.write("n_steps = {}\n".format(n_steps))
 			file_log.write("do_reset_env = {}\n".format(do_reset_env))
@@ -338,25 +340,13 @@ def main():
 			   break	       
 	elif args.mode == 'generate_database':
 		
-		#state = env.reset(use_frite=True)
 		env.draw_env_box()
 		
-		input("hit return !")
-		
-		
-		#db.print_config()
-		
-		#time.sleep(2)
-		
+		input("hit return to start generate !")
+		db.print_config_generate()
 		db.generate()
 		
-		print("End !")
-		
-		
-		while True:
-			keys = p.getKeyboardEvents()
-			if 65309 in keys:
-			   break
+		input("hit return !")
 			 
 	elif args.mode == 'show_database':
 		state = env.reset(use_frite=True)
