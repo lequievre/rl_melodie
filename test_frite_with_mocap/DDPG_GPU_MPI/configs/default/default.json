@@ -8,7 +8,24 @@
 		"time_step_sleep": 0.001,
 		"n_substeps": 20,
 		"time_set_action": 30.0,
-		"do_reset_env": true
+		"do_reset_env": true,
+		"gym_spaces":
+		{
+			"goal":{
+				"x_up": 0.05,
+				"x_down": 0.1,
+				"y_up": 0.25,
+				"y_down": 0.25,
+				"z_down": 0.25
+			},
+			"pose":{
+				"x_up": 0.05,
+				"x_down": 0.1,
+				"y_up": 0.25,
+				"y_down": 0.25,
+				"z_down": 0.25
+			}
+		}
 	},
 	"env_test": {
 		"n_episodes": 100,

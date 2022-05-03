@@ -38,11 +38,12 @@ class PandaFriteEnvROS(gym.Env):
 		
 		self.gui = gui
 		self.database = database
+		self.json_decoder = json_decoder
 		self.debug_lines_gripper_array = [0, 0, 0, 0]
 		
-		self.E = json_decoder.config_data["env"]["E"]
-		self.time_set_action = json_decoder.config_data["env"]["time_set_action"]
-		self.distance_threshold = json_decoder.config_data["env"]["distance_threshold"]
+		self.E = self.json_decoder.config_data["env"]["E"]
+		self.time_set_action = self.json_decoder.config_data["env"]["time_set_action"]
+		self.distance_threshold = self.json_decoder.config_data["env"]["distance_threshold"]
 		
 		# bullet env parameters + thread time_step
 		self.env_pybullet = env_pybullet
@@ -882,7 +883,7 @@ class PandaFriteEnvROS(gym.Env):
 		z_low_marge = 0.10
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
-		"""
+		
 		
 		
 		# EXTRA SMALL
@@ -902,7 +903,7 @@ class PandaFriteEnvROS(gym.Env):
 		self.goal_space = spaces.Box(low=np.array([low_x_down, low_y_down ,low_z_down]), high=np.array([low_x_up, low_y_up ,low_z_up]))
 		#print("frite env goal space = {}".format(self.goal_space))
 		
-		"""
+		
 		# POSE LARGE
 		low_marge = 0.1
 		low_x_down = panda_eff_state[0][0]-2*low_marge
@@ -914,7 +915,7 @@ class PandaFriteEnvROS(gym.Env):
 		z_low_marge = 0.3
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
-		"""
+		
 		
 		# POSE EXTRA SMALL
 		low_marge = 0.1
@@ -930,8 +931,8 @@ class PandaFriteEnvROS(gym.Env):
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
 	
+	
 		
-		"""
 		# POSE SMALL
 		low_marge = 0.1
 		low_x_down = panda_eff_state[0][0]-1.5*low_marge
@@ -945,6 +946,45 @@ class PandaFriteEnvROS(gym.Env):
 		low_z_down = panda_eff_state[0][2]-z_low_marge
 		low_z_up = panda_eff_state[0][2]
 		"""
+		
+		
+		goal_x_up = self.json_decoder.config_data["env"]["gym_spaces"]["goal"]["x_up"]
+		goal_x_down = self.json_decoder.config_data["env"]["gym_spaces"]["goal"]["x_down"]
+		goal_y_up = self.json_decoder.config_data["env"]["gym_spaces"]["goal"]["y_up"]
+		goal_y_down = self.json_decoder.config_data["env"]["gym_spaces"]["goal"]["y_down"]
+		goal_z_down = self.json_decoder.config_data["env"]["gym_spaces"]["goal"]["z_down"]
+		
+		
+		low_x_down = panda_eff_state[0][0]-goal_x_down
+		low_x_up = panda_eff_state[0][0]+goal_x_up
+		
+		low_y_down = panda_eff_state[0][1]-goal_y_down
+		low_y_up = panda_eff_state[0][1]+goal_y_up
+		
+		
+		low_z_down = panda_eff_state[0][2]-goal_z_down
+		low_z_up = panda_eff_state[0][2]
+		
+		self.goal_space = spaces.Box(low=np.array([low_x_down, low_y_down ,low_z_down]), high=np.array([low_x_up, low_y_up ,low_z_up]))
+		
+		
+		pose_x_up = self.json_decoder.config_data["env"]["gym_spaces"]["pose"]["x_up"]
+		pose_x_down = self.json_decoder.config_data["env"]["gym_spaces"]["pose"]["x_down"]
+		pose_y_up = self.json_decoder.config_data["env"]["gym_spaces"]["pose"]["y_up"]
+		pose_y_down = self.json_decoder.config_data["env"]["gym_spaces"]["pose"]["y_down"]
+		pose_z_down = self.json_decoder.config_data["env"]["gym_spaces"]["pose"]["z_down"]
+		
+		
+		low_x_down = panda_eff_state[0][0]-pose_x_down
+		low_x_up = panda_eff_state[0][0]+pose_x_up
+		
+		low_y_down = panda_eff_state[0][1]-pose_y_down
+		low_y_up = panda_eff_state[0][1]+pose_y_up
+		
+		
+		low_z_down = panda_eff_state[0][2]-pose_z_down
+		low_z_up = panda_eff_state[0][2]
+		
 		
 		self.pos_space = spaces.Box(low=np.array([low_x_down, low_y_down ,low_z_down]), high=np.array([low_x_up, low_y_up ,low_z_up]))
 		
