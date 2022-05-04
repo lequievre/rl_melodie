@@ -45,7 +45,8 @@ class Database_Frite:
 		self.data = None
 		self.nb_points = None
 		
-		print("nb_x={}, nb_y={}, nb_z={}".format(self.nb_x,self.nb_y,self.nb_z))
+		print("Database_Frite -> nb_x={}, nb_y={}, nb_z={}".format(self.nb_x,self.nb_y,self.nb_z))
+		print("Database_Frite -> type_db_load = {}, type_db_generate = {}".format(self.type_db_load, self.type_db_generate))
 	
 	def set_env(self, env):
 		self.env = env
@@ -140,8 +141,8 @@ class Database_Frite:
 			return None
 	
 	def load(self):
-		if self.type_db_load==0 or self.type_db_load==1:
-			self.load()
+		if (self.type_db_load==0 or self.type_db_load==1):
+			self.load_classic_random()
 		elif self.type_db_load==2:
 			self.load_mocap()
 		else:
@@ -192,7 +193,8 @@ class Database_Frite:
 		print("shape = {}".format(self.data.shape))	
 		print(self.data[0,0])
 		
-	def load(self):
+	def load_classic_random(self):
+		print("=> LOAD DATABASE Name = {}".format(self.path_load + self.load_name))
 		f = open(self.path_load + self.load_name)
 		total_list = []
 		for line in f.readlines():
