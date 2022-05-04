@@ -226,6 +226,7 @@ def main():
 		n_episodes = json_decoder.config_data["env_train"]["n_episodes"]
 		n_steps = json_decoder.config_data["env_train"]["n_steps"]
 		do_reset_env = json_decoder.config_data["env"]["do_reset_env"]
+		ddpg_load = json_decoder.config_data["ddpg"]["load"]
 		
 		print("** ENV MODE TRAIN **")
 		print("n_episodes = {}".format(n_episodes))
@@ -239,6 +240,9 @@ def main():
 			file_log.write("n_steps = {}\n".format(n_steps))
 			file_log.write("do_reset_env = {}\n".format(do_reset_env))
 		
+		if ddpg_load:
+			agent.load()
+			
 		global_step_number = 0
 		
 		for episode in range(n_episodes):
