@@ -4,6 +4,8 @@
 		"random_seed": 9527,
 		"distance_threshold": 0.05,
 		"E": 40,
+		"NU": 0.46,
+		"joint_motor_control_force": 100.0,
 		"time_step": 0.001,
 		"time_step_sleep": 0.001,
 		"n_substeps": 20,

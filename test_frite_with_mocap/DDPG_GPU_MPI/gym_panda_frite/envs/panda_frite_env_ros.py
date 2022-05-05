@@ -42,6 +42,8 @@ class PandaFriteEnvROS(gym.Env):
 		self.debug_lines_gripper_array = [0, 0, 0, 0]
 		
 		self.E = self.json_decoder.config_data["env"]["E"]
+		self.NU = self.json_decoder.config_data["env"]["NU"]
+		self.joint_motor_control_force = self.json_decoder.config_data["env"]["joint_motor_control_force"]
 		self.time_set_action = self.json_decoder.config_data["env"]["time_set_action"]
 		self.distance_threshold = self.json_decoder.config_data["env"]["distance_threshold"]
 		
@@ -217,14 +219,8 @@ class PandaFriteEnvROS(gym.Env):
 		jointPoses = p.calculateInverseKinematics(self.panda_id, self.panda_end_eff_idx, new_pos, cur_orien)[0:7]
 		
 		for i in range(len(jointPoses)):
-			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=100 * 240.)
-			#p.stepSimulation()
+			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=self.joint_motor_control_force * 240.)
 		
-		
-		"""	
-		for i in range(1000):
-					p.stepSimulation()
-		"""
 	
 	def transform_mocap_poses_to_arm_poses(self, mocap_poses, orientation_base_frame_array):
 		
@@ -1098,7 +1094,7 @@ class PandaFriteEnvROS(gym.Env):
 		# E = 40*pow(10,6)  NU = 0.49
 		
 		E = self.E*pow(10,6)
-		NU = 0.46
+		NU = self.NU
 		(a_lambda,a_mu) = self.conv_module_d_young_to_lame(E,NU)
 		
 		# frite : 103 cm with 0.1 cell size
@@ -1260,7 +1256,7 @@ class PandaFriteEnvROS(gym.Env):
 		jointPoses = p.calculateInverseKinematics(self.panda_id, self.panda_end_eff_idx, new_pos, cur_orien)[0:7]
 		
 		for i in range(len(jointPoses)):
-			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=100 * 240.)
+			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=self.joint_motor_control_force * 240.)
 			
 		
 	def set_action(self, action):
@@ -1276,7 +1272,7 @@ class PandaFriteEnvROS(gym.Env):
 		jointPoses = p.calculateInverseKinematics(self.panda_id, self.panda_end_eff_idx, new_pos, cur_orien)[0:7]
 		
 		for i in range(len(jointPoses)):
-			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=100 * 240.)
+			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=self.joint_motor_control_force * 240.)
 	
 	
 	def get_obs(self):
