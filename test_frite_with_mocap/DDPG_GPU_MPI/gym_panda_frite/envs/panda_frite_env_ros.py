@@ -47,6 +47,17 @@ class PandaFriteEnvROS(gym.Env):
 		self.time_set_action = self.json_decoder.config_data["env"]["time_set_action"]
 		self.distance_threshold = self.json_decoder.config_data["env"]["distance_threshold"]
 		
+		self.do_random_frite = self.json_decoder.config_data["randomization"]["frite"]["do_random"]
+		self.min_E = self.json_decoder.config_data["randomization"]["frite"]["E"]["min"]
+		self.max_E = self.json_decoder.config_data["randomization"]["frite"]["E"]["max"]
+		
+		self.E_space = spaces.Box(low=np.array([self.min_E]), high=np.array([self.max_E]))
+		
+		self.min_NU = self.json_decoder.config_data["randomization"]["frite"]["NU"]["min"]
+		self.max_NU = self.json_decoder.config_data["randomization"]["frite"]["NU"]["max"]
+		
+		self.NU_space = spaces.Box(low=np.array([self.min_NU]), high=np.array([self.max_NU]))
+		
 		# bullet env parameters + thread time_step
 		self.env_pybullet = env_pybullet
 		
@@ -1093,8 +1104,15 @@ class PandaFriteEnvROS(gym.Env):
 		# frite noire :  E = 35 , NU = 0.46
 		# E = 40*pow(10,6)  NU = 0.49
 		
-		E = self.E*pow(10,6)
-		NU = self.NU
+		if (self.do_random_frite):
+			E = self.E_space.sample()*pow(10,6)
+			NU = self.NU_space.sample()
+			print("Use Random E={}, NU={}".format(E,NU))
+		else:
+			E = self.E*pow(10,6)
+			NU = self.NU
+			print("Use JSON E={}, NU={}".format(E,NU))
+			
 		(a_lambda,a_mu) = self.conv_module_d_young_to_lame(E,NU)
 		
 		# frite : 103 cm with 0.1 cell size
