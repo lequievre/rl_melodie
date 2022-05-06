@@ -58,6 +58,17 @@ class PandaFriteEnvROS(gym.Env):
 		
 		self.NU_space = spaces.Box(low=np.array([self.min_NU]), high=np.array([self.max_NU]))
 		
+		self.action_x_min = self.json_decoder.config_data["randomization"]["action"]["x"]["min"]
+		self.action_x_max = self.json_decoder.config_data["randomization"]["action"]["x"]["max"]
+		self.action_y_min = self.json_decoder.config_data["randomization"]["action"]["y"]["min"]
+		self.action_y_max = self.json_decoder.config_data["randomization"]["action"]["y"]["max"]
+		self.action_z_min = self.json_decoder.config_data["randomization"]["action"]["z"]["min"]
+		self.action_z_max = self.json_decoder.config_data["randomization"]["action"]["z"]["max"]
+		
+		self.action_x_space = spaces.Box(low=np.array([self.action_x_min]), high=np.array([self.action_x_max]))
+		self.action_y_space = spaces.Box(low=np.array([self.action_y_min]), high=np.array([self.action_y_max]))
+		self.action_z_space = spaces.Box(low=np.array([self.action_z_min]), high=np.array([self.action_z_max]))
+		
 		# bullet env parameters + thread time_step
 		self.env_pybullet = env_pybullet
 		
@@ -204,6 +215,10 @@ class PandaFriteEnvROS(gym.Env):
 		#self.show_cartesian_sliders()
 		
 		#p.stepSimulation()
+
+
+	def sample_random_action(self):
+		return np.array([self.action_x_space.sample(),self.action_y_space.sample(),self.action_z_space.sample()]).flatten()
 
 	def draw_cross_mocap_mesh(self):
 		for i in range(len(self.poses_meshes_in_arm_frame)):

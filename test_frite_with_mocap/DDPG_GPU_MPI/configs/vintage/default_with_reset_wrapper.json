@@ -3,21 +3,21 @@
 		"name": "PandaFrite-v1",
 		"random_seed": 9527,
 		"distance_threshold": 0.05,
-		"E": 40,
-		"NU": 0.46,
+		"E": 2.5,
+		"NU": 0.3,
 		"joint_motor_control_force": 100.0,
-		"time_step": 0.001,
+		"time_step": 0.003,
 		"time_step_sleep": 0.001,
 		"n_substeps": 20,
-		"time_set_action": 30.0,
+		"time_set_action": 0.0,
 		"do_reset_env": true,
 		"id_frite_to_follow": [ [31, 15], [13, 10], [18, 14], [28, 53] ],
 		"under_id_frite_to_follow": [ [63, 38], [58, 54], [42, 37], [23, 32] ],
 		"gym_spaces":
 		{
 			"spaces":[{"name": "extra_small","x_up": 0.025,"x_down": 0.05,"y_up": 0.15,"y_down": 0.15,"z_down": 0.1},{"name": "small","x_up": 0.05,"x_down": 0.1,"y_up": 0.25,"y_down": 0.25,"z_down": 0.25},{"name": "medium","x_up": 0.05,"x_down": 0.15,"y_up": 0.3,"y_down": 0.3,"z_down": 0.25},{"name": "large","x_up": 0.05,"x_down": 0.15,"y_up": 0.4,"y_down": 0.4,"z_down": 0.3}],
-			"goal": 0,
-			"pose": 1
+			"goal": 1,
+			"pose": 3
 		}
 	},
 	"randomization": {
@@ -51,40 +51,40 @@
 		"n_episodes": 100,
 		"n_steps": 10,
 		"do_episode_hit_return": false,
-		"wait_time_sleep_end_episode": 0.75,
+		"wait_time_sleep_end_episode": 0.0,
 		"wait_time_sleep_after_draw_env_box": 0.5
 	},
 	"env_train": {
-		"n_episodes": 100,
-		"n_steps": 10
+		"n_episodes": 63,
+		"n_steps": 300
 	},
 	"ddpg": {
-		 "log_interval": 50,
+		 "log_interval": 2,
 		 "batch_size": 128,
 		 "max_memory_size": 50000,
 		 "load": false,
-		 "weights_dir_name": "./weights/",
+		 "weights_dir_name": "./w32_s_005_wrapper/",
 		 "cuda": false
 	},
 	"database": {
-		"root_path_databases": "./databases_test",
+		"root_path_databases": "./databases",
 		"generate": {
-			"database_name": "database_id_frite.txt",
-			"dir_name": "/default_generate/",
+			"database_name": "database_id_frite_vintage.txt",
+			"dir_name": "/generate_vintage/",
 			"nb_x": 8,
 			"nb_y": 22,
 			"nb_z": 10,
-			"nb_random_goal": 250,
-			"type_db": 0
+			"nb_random_goal": 800,
+			"type_db": 1
 		},
 		"load": {
-			"database_name": "database_goal_mocap_poses_10_s_100.txt",
-			"dir_name": "/default_load_mocap/",
-			"type_db": 2
+			"database_name": "database_id_frite_vintage.txt",
+			"dir_name": "/load_vintage/",
+			"type_db": 1
 		}
 	},
 	"log": {
 		"log_path": "./logs/",
-		"log_name": "log_default.txt"
+		"log_name": "log_w32_s_005_with_reset_vintage_wrapper.txt"
 	}
 }
