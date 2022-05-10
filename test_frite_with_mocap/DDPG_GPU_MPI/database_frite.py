@@ -11,21 +11,11 @@ class Database_Frite:
 		if json_decoder==None:
 			raise RuntimeError("=> Database_Frite class need a JSON Decoder, to get some parameters !!!")
 			return
-		
-		root_path_databases = json_decoder.config_data["database"]["root_path_databases"]
-		
-		generate_db_dir_name = json_decoder.config_data["database"]["generate"]["dir_name"]
-		generate_database_name = json_decoder.config_data["database"]["generate"]["database_name"]
-		generate_path_databases = root_path_databases + generate_db_dir_name
-		
-		load_db_dir_name = json_decoder.config_data["database"]["load"]["dir_name"]
-		load_database_name = json_decoder.config_data["database"]["load"]["database_name"]
-		load_path_databases = root_path_databases + load_db_dir_name
 			
-		self.load_name = load_database_name
-		self.generate_name = generate_database_name
-		self.path_load = load_path_databases
-		self.path_generate = generate_path_databases
+		self.load_name = json_decoder.config_data["database"]["name"]
+		self.generate_name = 'generate_' + json_decoder.config_data["database"]["name"]
+		self.path_load = json_decoder.config_dir_name
+		self.path_generate = json_decoder.config_dir_name
 		self.db_nb_random_goal = json_decoder.config_data["database"]["generate"]["nb_random_goal"]
 		
 		# type of db , 0 = classic, 1 = random, 2 = mocap

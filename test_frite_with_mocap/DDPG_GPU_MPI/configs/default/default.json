@@ -1,10 +1,12 @@
 {
 	"env": {
 		"name": "PandaFrite-v1",
+		"vtk_file_name": "frite.vtk",
 		"random_seed": 9527,
 		"distance_threshold": 0.05,
 		"E": 40,
 		"NU": 0.46,
+		"dt_factor": 1.0,
 		"joint_motor_control_force": 100.0,
 		"time_step": 0.001,
 		"time_step_sleep": 0.001,
@@ -63,14 +65,11 @@
 		 "batch_size": 128,
 		 "max_memory_size": 50000,
 		 "load": false,
-		 "weights_dir_name": "./weights/",
 		 "cuda": false
 	},
 	"database": {
-		"root_path_databases": "./databases_test",
+		"name": "database_id_frite.txt",
 		"generate": {
-			"database_name": "database_id_frite.txt",
-			"dir_name": "/default_generate/",
 			"nb_x": 8,
 			"nb_y": 22,
 			"nb_z": 10,
@@ -78,13 +77,10 @@
 			"type_db": 0
 		},
 		"load": {
-			"database_name": "database_goal_mocap_poses_10_s_100.txt",
-			"dir_name": "/default_load_mocap/",
 			"type_db": 2
 		}
 	},
 	"log": {
-		"log_path": "./logs/",
-		"log_name": "log_default.txt"
+		"name": "log_default.txt"
 	}
 }

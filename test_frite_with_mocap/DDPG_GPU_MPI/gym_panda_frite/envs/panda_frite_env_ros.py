@@ -43,6 +43,7 @@ class PandaFriteEnvROS(gym.Env):
 		
 		self.E = self.json_decoder.config_data["env"]["E"]
 		self.NU = self.json_decoder.config_data["env"]["NU"]
+		self.dt_factor = self.json_decoder.config_data["env"]["dt_factor"]
 		self.joint_motor_control_force = self.json_decoder.config_data["env"]["joint_motor_control_force"]
 		self.time_set_action = self.json_decoder.config_data["env"]["time_set_action"]
 		self.distance_threshold = self.json_decoder.config_data["env"]["distance_threshold"]
@@ -72,7 +73,7 @@ class PandaFriteEnvROS(gym.Env):
 		# bullet env parameters + thread time_step
 		self.env_pybullet = env_pybullet
 		
-		self.dt = self.env_pybullet.time_step*self.env_pybullet.n_substeps*10
+		self.dt = self.env_pybullet.time_step*self.env_pybullet.n_substeps*self.dt_factor
 		self.max_vel = 1
 		self.max_gripper_vel = 20
 		
@@ -1130,8 +1131,13 @@ class PandaFriteEnvROS(gym.Env):
 			
 		(a_lambda,a_mu) = self.conv_module_d_young_to_lame(E,NU)
 		
+		#print("frite a_lambda={}, a_mu={}".format(a_lambda,a_mu))
+		
+		
+		vtk_file_name = self.json_decoder.config_dir_name + self.json_decoder.config_data["env"]["vtk_file_name"]
+		
 		# frite : 103 cm with 0.1 cell size
-		self.frite_id = p.loadSoftBody("vtk/frite.vtk", basePosition = self.frite_startPos, baseOrientation=self.frite_startOrientation, mass = 0.2, useNeoHookean = 1, NeoHookeanMu = a_mu, NeoHookeanLambda = a_lambda, NeoHookeanDamping = 0.01, useSelfCollision = 1, collisionMargin = 0.001, frictionCoeff = 0.5, scale=1.0)
+		self.frite_id = p.loadSoftBody(vtk_file_name, basePosition = self.frite_startPos, baseOrientation=self.frite_startOrientation, mass = 0.2, useNeoHookean = 1, NeoHookeanMu = a_mu, NeoHookeanLambda = a_lambda, NeoHookeanDamping = 0.01, useSelfCollision = 1, collisionMargin = 0.001, frictionCoeff = 0.5, scale=1.0)
 		#p.changeVisualShape(self.frite_id, -1, flags=p.VISUAL_SHAPE_DOUBLE_SIDED)
 			
 		"""

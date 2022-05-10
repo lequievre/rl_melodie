@@ -5,6 +5,8 @@ class JsonDecoder():
 	
 	def __init__(self, config_file_name=None):
 		self.config_file = config_file_name
+		
+		self.config_dir_name = os.path.dirname(self.config_file) + '/'
 
 		if not os.path.isfile(self.config_file):
 			raise RuntimeError("=> Config file JSON to load does not exit : " + self.config_file)

@@ -33,28 +33,15 @@ args = parser.parse_args()
 
 def main():
 	
+	if not os.path.isfile(args.config_file):
+			raise RuntimeError("=> Config file JSON to load does not exit : " + args.config_file)
+			return
+
 	json_decoder = JsonDecoder(args.config_file)
 
 	os.environ['OMP_NUM_THREADS'] = '1'
 	os.environ['MKL_NUM_THREADS'] = '1'
 	os.environ['IN_MPI'] = '1'
-
-	root_path_databases = json_decoder.config_data["database"]["root_path_databases"]
-	generate_db_dir_name = json_decoder.config_data["database"]["generate"]["dir_name"]
-	load_db_dir_name = json_decoder.config_data["database"]["load"]["dir_name"]
-	load_database_name = json_decoder.config_data["database"]["load"]["database_name"]
-	generate_database_name = json_decoder.config_data["database"]["generate"]["database_name"]
-	
-	generate_path_databases = root_path_databases + generate_db_dir_name
-	load_path_databases = root_path_databases + load_db_dir_name
-	print("** DATABASE PARAMETERS **")
-	print("root_path_databases = {}".format(root_path_databases))
-	print("generate_db_dir_name = {}".format(generate_db_dir_name))
-	print("load_db_dir_name = {}".format(load_db_dir_name))
-	print("load_database_name = {}".format(load_database_name))
-	print("generate_database_name = {}".format(generate_database_name))
-	print("generate_path_databases = {}".format(generate_path_databases))
-	print("load_path_databases = {}".format(load_path_databases))
 	
 	env_name = json_decoder.config_data["env"]["name"]
 	env_random_seed = json_decoder.config_data["env"]["random_seed"]
@@ -65,7 +52,6 @@ def main():
 	print("env_random_seed = {}".format(env_random_seed))
 	print("env_time_set_action = {}".format(env_time_set_action))
 	
-	weights_dir_name = json_decoder.config_data["ddpg"]["weights_dir_name"]
 	ddpg_cuda = json_decoder.config_data["ddpg"]["cuda"]
 	ddpg_max_memory_size = json_decoder.config_data["ddpg"]["max_memory_size"]
 	ddpg_batch_size = json_decoder.config_data["ddpg"]["batch_size"]
@@ -76,33 +62,21 @@ def main():
 	print("ddpg_batch_size = {}".format(ddpg_batch_size))
 	print("ddpg_max_memory_size = {}".format(ddpg_max_memory_size))
 	print("ddpg_log_interval = {}".format(ddpg_log_interval))
-	print("weights_dir_name = {}".format(weights_dir_name))
 	
-	log_path = json_decoder.config_data["log"]["log_path"]
-	log_name = json_decoder.config_data["log"]["log_name"]
+	log_name = json_decoder.config_data["log"]["name"]
+	database_name = json_decoder.config_data["database"]["name"]
 	
 	print("** LOG PARAMETERS **")
-	print("log_path = {}".format(log_path))
 	print("log_name = {}".format(log_name))
 	
 	rank = MPI.COMM_WORLD.Get_rank()
     
-	if MPI.COMM_WORLD.Get_rank() == 0:
-		if not os.path.isdir(weights_dir_name):
-			os.makedirs(weights_dir_name)
-		if not os.path.isdir(generate_path_databases):
-			os.makedirs(generate_path_databases)
-		if not os.path.isdir(load_path_databases):
-			os.makedirs(load_path_databases)
-		if not os.path.isdir(log_path):
-			os.makedirs(log_path)
-    
-	if not os.path.isfile(load_path_databases + load_database_name):
-		raise RuntimeError("=> Database file to load does not exit : " + load_path_databases + load_database_name)
+	if not os.path.isfile(json_decoder.config_dir_name  + database_name):
+		raise RuntimeError("=> Database file to load does not exit : " + json_decoder.config_dir_name  + database_name)
 		return
 		
 	if rank == 0:
-		file_log = open(log_path + log_name, "w+")
+		file_log = open(json_decoder.config_dir_name + log_name, "w+")
 		
 	env_pybullet = Environment(json_decoder=json_decoder, gui=args.gui)
 	env_pybullet.reset()
@@ -116,7 +90,7 @@ def main():
 	if (ddpg_cuda):
 		torch.cuda.manual_seed(env_random_seed + MPI.COMM_WORLD.Get_rank())
     
-	agent = DDPGagent(ddpg_cuda, env, max_memory_size=ddpg_max_memory_size, directory=weights_dir_name)
+	agent = DDPGagent(ddpg_cuda, env, max_memory_size=ddpg_max_memory_size, directory=json_decoder.config_dir_name)
 	noise = OUNoise(env.action_space)
     
 	list_global_rewards = []
@@ -368,7 +342,7 @@ def main():
 			   
 	else:
 		raise NameError("mode wrong!!!")
-    
+   
         
 if __name__ == '__main__':
 	main()
