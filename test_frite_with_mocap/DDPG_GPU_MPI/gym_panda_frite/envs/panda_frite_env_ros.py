@@ -9,22 +9,23 @@ import pybullet_data as pd
 import math
 from numpy import linalg as LA
 
-import rospy
-import rospkg
+
 import threading
 from datetime import datetime
 import time
 
-from geometry_msgs.msg import PoseArray, Point, Quaternion
-from geometry_msgs.msg import PoseStamped
-
-from std_msgs.msg import Float64
-from std_msgs.msg import Float64MultiArray
-
-from visualization_msgs.msg import MarkerArray, Marker
-
 from gym_panda_frite.envs.debug_gui import Debug_Gui
 
+def import_ros_packages():
+	import rospy
+	import rospkg
+	from geometry_msgs.msg import PoseArray, Point, Quaternion
+	from geometry_msgs.msg import PoseStamped
+
+	from std_msgs.msg import Float64
+	from std_msgs.msg import Float64MultiArray
+
+	from visualization_msgs.msg import MarkerArray, Marker
 
 class PandaFriteEnvROS(gym.Env):
 	
@@ -36,9 +37,16 @@ class PandaFriteEnvROS(gym.Env):
 	
 		print("****** PandaFriteEnvROS !!!! ************")
 		
+		self.json_decoder = json_decoder
+		is_ros_version = self.json_decoder.config_data["env"]["is_ros_version"]
+		if is_ros_version:
+			print("ROS VERSION !!!!!!!!!")
+			import_ros_packages()
+		else:
+			print("NO ROS VERSION !!!!!!!!!!!!")
+		
 		self.gui = gui
 		self.database = database
-		self.json_decoder = json_decoder
 		self.debug_lines_gripper_array = [0, 0, 0, 0]
 		
 		self.E = self.json_decoder.config_data["env"]["E"]

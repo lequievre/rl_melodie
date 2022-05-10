@@ -1,5 +1,6 @@
 {
 	"env": {
+		"is_ros_version": false,
 		"name": "PandaFrite-v1",
 		"vtk_file_name": "frite.vtk",
 		"random_seed": 9527,
