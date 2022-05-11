@@ -209,6 +209,7 @@ class Database_Frite:
 		self.env.compute_mesh_pos_to_follow(draw_normal=False)
 		for k in range(len(self.env.position_mesh_to_follow)):
 			f.write("{:.3f} {:.3f} {:.3f} {:.3f} {:.3f} {:.3f}\n".format(self.env.mean_position_to_follow[k][0], self.env.mean_position_to_follow[k][1], self.env.mean_position_to_follow[k][2], self.env.position_mesh_to_follow[k][0],  self.env.position_mesh_to_follow[k][1], self.env.position_mesh_to_follow[k][2]))
+		f.flush()
 
 	def go_to_corner(self):
 		# go to corner
@@ -238,14 +239,14 @@ class Database_Frite:
 		f = open(self.path_generate + self.generate_name, "w+")
 		
 		for i in range(self.db_nb_random_goal):
-			#self.env.reset(use_frite=True)
+			self.env.reset_env()
 			# get a random goal = numpy array [x,y,z]
 			a_random_goal = self.env.sample_goal_database()
 			print("-> {} : Go to GOAL : {} !".format(i,a_random_goal))
 			self.env.go_to_position_simulated(a_random_goal)
 			print("-> Goal OK !")
-			print("->  Save value !")
 			time.sleep(self.time_action)
+			print("->  Save value !")
 			self.write_floats(f)
 			
 		print("->Close file !")

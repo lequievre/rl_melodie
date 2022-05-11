@@ -1416,14 +1416,13 @@ class PandaFriteEnvROS(gym.Env):
 			# load frite
 			self.load_frite()
 			#p.stepSimulation()
-		
-			# close gripper
-			self.close_gripper()
-			#p.stepSimulation()
-			
 			
 			# anchor frite to gripper
 			self.create_anchor_panda()
+			#p.stepSimulation()
+			
+			# close gripper
+			#self.close_gripper()
 			#p.stepSimulation()
 		
 	def reset(self):

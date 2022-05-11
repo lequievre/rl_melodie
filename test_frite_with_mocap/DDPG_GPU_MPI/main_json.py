@@ -255,6 +255,7 @@ def main():
 			if rank == 0:
 				print('=> [{}] episode is: {}, eval success rate is: {:.3f}'.format(datetime.now(), episode, list_global_rewards[episode]))
 				file_log.write('=> [{}] episode is: {}, eval success rate is: {:.3f}\n'.format(datetime.now(), episode, list_global_rewards[episode])) 
+				file_log.flush()
 				
 				if episode % ddpg_log_interval == 0:
 					agent.save()
@@ -340,6 +341,117 @@ def main():
 			if 65309 in keys:
 			   break
 			   
+	elif args.mode == 'deformation':
+		state = env.reset_env(use_frite=True)
+		l = env.id_frite_to_follow
+		
+		pt_left_array_start = np.zeros((len(env.id_frite_to_follow),3))
+		pt_left_array_current = np.zeros((len(env.id_frite_to_follow),3))
+		
+		action = np.zeros(3)
+		action[0] = 1.0
+		action[1] = 1.0
+		action[2] = -1.0
+		
+		
+		input("hit return to start deformation test !")
+		
+		"""
+		data = p.getMeshData(env.frite_id, -1, flags=p.MESH_DATA_SIMULATION_MESH)
+		for i in range(len(env.id_frite_to_follow)):
+			pt_left_array_start[i] = np.array(data[1][env.id_frite_to_follow[i][0]])
+			#env.debug_gui.draw_cross("mesh_mocap_" + str(i) , a_pos = [pt_left_array[i][0],pt_left_array[i][1],pt_left_array[i][2]])
+		
+		diff_previous = np.round(np.subtract(pt_left_array_start,pt_left_array_start), 3)
+		
+		diff_current = diff_previous + 5
+		
+		print("start ->", diff_previous, diff_current)
+		print("start ->", np.array_equal(diff_previous,diff_current))
+		"""
+		env.set_action(action)
+		
+		time.sleep(10.0)
+		
+		data = p.getMeshData(env.frite_id, -1, flags=p.MESH_DATA_SIMULATION_MESH)
+		for i in range(len(env.id_frite_to_follow)):
+			pt_left_array_start[i] = np.array(data[1][env.id_frite_to_follow[i][0]])
+			env.debug_gui.draw_cross("mesh_mocap_" + str(i) , a_pos = [pt_left_array_start[i][0],pt_left_array_start[i][1],pt_left_array_start[i][2]])
+		
+		
+		
+		"""
+		
+		start=datetime.now()
+		
+		i = 0
+		
+		while np.array_equal(diff_previous,diff_current) == False:
+			
+			diff_previous = diff_current
+			
+			time.sleep(0.5)
+			
+			i = i + 1
+			print(i)
+			
+			#start_data = datetime.now()
+			data = p.getMeshData(env.frite_id, -1, flags=p.MESH_DATA_SIMULATION_MESH)
+			#print("time data = {}".format(((datetime.now()-start_data).total_seconds())*1000))
+		
+			for i in range(len(env.id_frite_to_follow)):
+				pt_left_array_current[i] = np.array(data[1][env.id_frite_to_follow[i][0]])
+			
+			
+			#print(pt_left_array_previous, pt_left_array_current)
+			diff_current = np.round(np.subtract(pt_left_array_current,pt_left_array_start), 3)
+			
+			print("loop ->", np.array_equal(diff_previous,diff_current))
+			print(diff_current)
+			print("diff = {}, time = {}".format(diff_current,((datetime.now()-start).total_seconds())*1000))
+			#pt_left_array_previous = pt_left_array_current
+			
+		"""	
+		"""
+		state = env.reset_env(use_frite=True)
+		l = env.id_frite_to_follow
+		
+		pt_left_array_start = np.zeros((len(env.id_frite_to_follow),3))
+		pt_left_array_current = np.zeros((len(env.id_frite_to_follow),3))
+		
+		action = np.zeros(3)
+		action[0] = 1.0
+		action[1] = 1.0
+		action[2] = -1.0
+		
+		input("hit return to start deformation test !")
+		
+		data = p.getMeshData(env.frite_id, -1, flags=p.MESH_DATA_SIMULATION_MESH)
+		for i in range(len(env.id_frite_to_follow)):
+			pt_left_array_start[i] = np.array(data[1][env.id_frite_to_follow[i][0]])
+			
+		env.set_action(action)
+		
+		start=datetime.now()
+		
+		for i in range (50):
+			
+			time.sleep(1.5)
+
+			data = p.getMeshData(env.frite_id, -1, flags=p.MESH_DATA_SIMULATION_MESH)
+		
+			for i in range(len(env.id_frite_to_follow)):
+				pt_left_array_current[i] = np.array(data[1][env.id_frite_to_follow[i][0]])
+			
+			diff_current = pt_left_array_current - pt_left_array_start
+			print("diff = {}".format(diff_current))
+			
+			
+		print("diff = {}, time = {}".format(diff_current,((datetime.now()-start).total_seconds())*1000))
+		"""
+		
+		input("hit return !")
+		
 	else:
 		raise NameError("mode wrong!!!")
    
