@@ -26,6 +26,10 @@ class WrapperPandaFriteEnv(Wrapper):
 		max_d = 0
 		
 		for i in range(nb_mesh_to_follow):
+			#print("i= {}, observation before ={}\n".format(i,observation[(6+(i*3)):(6+(i*3)+3)]))
+			#print("random observation = ", self.env.sample_random_observation())
+			observation[(6+(i*3)):(6+(i*3)+3)] += self.env.sample_random_observation()
+			#print("i= {}, observation after ={}\n".format(i,observation[(6+(i*3)):(6+(i*3)+3)]))
 			current_pos_mesh = observation[(6+(i*3)):(6+(i*3)+3)]
 			goal_pos_id_frite = self.env.goal[i]
 			d =  np.linalg.norm(current_pos_mesh - goal_pos_id_frite, axis=-1)

@@ -67,6 +67,9 @@ class PandaFriteEnvROS(gym.Env):
 		
 		self.NU_space = spaces.Box(low=np.array([self.min_NU]), high=np.array([self.max_NU]))
 		
+		
+		# define action space
+		
 		self.action_x_min = self.json_decoder.config_data["randomization"]["action"]["x"]["min"]
 		self.action_x_max = self.json_decoder.config_data["randomization"]["action"]["x"]["max"]
 		self.action_y_min = self.json_decoder.config_data["randomization"]["action"]["y"]["min"]
@@ -77,6 +80,19 @@ class PandaFriteEnvROS(gym.Env):
 		self.action_x_space = spaces.Box(low=np.array([self.action_x_min]), high=np.array([self.action_x_max]))
 		self.action_y_space = spaces.Box(low=np.array([self.action_y_min]), high=np.array([self.action_y_max]))
 		self.action_z_space = spaces.Box(low=np.array([self.action_z_min]), high=np.array([self.action_z_max]))
+		
+		# define observation space
+		
+		self.observation_x_min = self.json_decoder.config_data["randomization"]["observation"]["x"]["min"]
+		self.observation_x_max = self.json_decoder.config_data["randomization"]["observation"]["x"]["max"]
+		self.observation_y_min = self.json_decoder.config_data["randomization"]["observation"]["y"]["min"]
+		self.observation_y_max = self.json_decoder.config_data["randomization"]["observation"]["y"]["max"]
+		self.observation_z_min = self.json_decoder.config_data["randomization"]["observation"]["z"]["min"]
+		self.observation_z_max = self.json_decoder.config_data["randomization"]["observation"]["z"]["max"]
+		
+		self.observation_x_space = spaces.Box(low=np.array([self.observation_x_min]), high=np.array([self.observation_x_max]))
+		self.observation_y_space = spaces.Box(low=np.array([self.observation_y_min]), high=np.array([self.observation_y_max]))
+		self.observation_z_space = spaces.Box(low=np.array([self.observation_z_min]), high=np.array([self.observation_z_max]))
 		
 		# bullet env parameters + thread time_step
 		self.env_pybullet = env_pybullet
@@ -228,6 +244,9 @@ class PandaFriteEnvROS(gym.Env):
 
 	def sample_random_action(self):
 		return np.array([self.action_x_space.sample(),self.action_y_space.sample(),self.action_z_space.sample()]).flatten()
+
+	def sample_random_observation(self):
+		return np.array([self.observation_x_space.sample(),self.observation_y_space.sample(),self.observation_z_space.sample()]).flatten()
 
 	def draw_cross_mocap_mesh(self):
 		for i in range(len(self.poses_meshes_in_arm_frame)):
