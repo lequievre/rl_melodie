@@ -17,7 +17,30 @@ class WrapperPandaFriteEnv(Wrapper):
 		return self.env.reset(**kwargs)
 
 	def step(self, action):
-		observation, reward, done, info = self.env.step(self.action(action))
+		observation, reward, done, info = self.env.step(action)
+		
+		done = True
+		
+		nb_mesh_to_follow = len(self.env.position_mesh_to_follow)
+		
+		max_d = 0
+		
+		for i in range(nb_mesh_to_follow):
+			current_pos_mesh = observation[(6+(i*3)):(6+(i*3)+3)]
+			goal_pos_id_frite = self.env.goal[i]
+			d =  np.linalg.norm(current_pos_mesh - goal_pos_id_frite, axis=-1)
+			if (d > max_d):
+				max_d = d
+				
+		info = {
+			'is_success': self.env.is_success(max_d),
+			'max_distance_error' : max_d,
+		}
+
+		reward = -max_d
+		if (max_d > self.distance_threshold):
+			done = False
+		
 
 		return observation, reward, done, info
 		
