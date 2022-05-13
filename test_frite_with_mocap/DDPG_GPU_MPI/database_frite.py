@@ -14,6 +14,7 @@ class Database_Frite:
 			
 		self.load_name = json_decoder.config_data["database"]["name"]
 		self.generate_name = 'generate_' + json_decoder.config_data["database"]["name"]
+		self.generate_gripper_name = 'gripper_' + json_decoder.config_data["database"]["name"]
 		self.path_load = json_decoder.config_dir_name
 		self.path_generate = json_decoder.config_dir_name
 		self.db_nb_random_goal = json_decoder.config_data["database"]["generate"]["nb_random_goal"]
@@ -211,6 +212,11 @@ class Database_Frite:
 			f.write("{:.3f} {:.3f} {:.3f} {:.3f} {:.3f} {:.3f}\n".format(self.env.mean_position_to_follow[k][0], self.env.mean_position_to_follow[k][1], self.env.mean_position_to_follow[k][2], self.env.position_mesh_to_follow[k][0],  self.env.position_mesh_to_follow[k][1], self.env.position_mesh_to_follow[k][2]))
 		f.flush()
 
+
+	def write_gripper_floats(self, gripper_pos, f):
+		f.write("{:.3f} {:.3f} {:.3f}\n".format(gripper_pos[0], gripper_pos[1], gripper_pos[2]))
+		f.flush()
+		
 	def go_to_corner(self):
 		# go to corner
 		d_x_y_z= [-self.step_x, 0.0, 0.0]
@@ -237,12 +243,16 @@ class Database_Frite:
 	def generate_random(self):
 		print("->Open database file : ", self.path_generate + self.generate_name , " !")
 		f = open(self.path_generate + self.generate_name, "w+")
+		f_gripper = open(self.path_generate + self.generate_gripper_name, "w+")
 		
 		for i in range(self.db_nb_random_goal):
 			self.env.reset_env()
+			if self.env.gui:
+				self.env.draw_env_box()
 			# get a random goal = numpy array [x,y,z]
 			a_random_goal = self.env.sample_goal_database()
 			print("-> {} : Go to GOAL : {} !".format(i,a_random_goal))
+			self.write_gripper_floats(a_random_goal, f_gripper)
 			self.env.go_to_position_simulated(a_random_goal)
 			print("-> Goal OK !")
 			time.sleep(self.time_action)
@@ -251,6 +261,7 @@ class Database_Frite:
 			
 		print("->Close file !")
 		f.close()
+		f_gripper.close()
 			
 	def generate_classic(self):
 		self.init_spaces()
