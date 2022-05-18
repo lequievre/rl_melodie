@@ -538,9 +538,10 @@ class PandaFriteEnvROS(gym.Env):
 		self.matrix_mocap_frame_in_arm_frame = None
 		self.init_cartesian_orientation = np.array([1.000, 0.000, 0.000, 0.000])
 										
+		# x = 0, y = 30 cm , 0.3 m								
 		self.matrix_base_frame_in_arm_frame = np.array(
-											[[1, 0, 0, 0.025],
-											[0, 1, 0, 0.422],
+											[[1, 0, 0, -0.0088],
+											[0, 1, 0, 0.3064],
 											[0, 0, 1, 0.017],
 											[0, 0, 0, 1]]
 										)
