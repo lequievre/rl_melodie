@@ -340,7 +340,29 @@ def main():
 			keys = p.getKeyboardEvents()
 			if 65309 in keys:
 			   break
-			   
+	elif args.mode == 'test_real':
+		"""
+		input("hit return to start !")
+		
+		file_pos= open(json_decoder.config_dir_name + 'pos_to_follow.txt', "w+")
+		state = env.reset()
+		
+		input("hit return to get obs !")
+		env.get_obs()
+		
+		input("hit return ro save file pos !")
+		pos = env.position_mesh_to_follow
+		
+		for k in range(len(pos)):
+			file_pos.write("{:.3f} {:.3f} {:.3f}\n".format(pos[k][0], pos[k][1], pos[k][2]))
+			
+		file_pos.close()
+		input("hit return to finish  !")
+		"""
+		env.init_ros()
+		
+		input("hit return ro finish !")
+		
 	elif args.mode == 'deformation':
 		state = env.reset_env(use_frite=True)
 		l = env.id_frite_to_follow

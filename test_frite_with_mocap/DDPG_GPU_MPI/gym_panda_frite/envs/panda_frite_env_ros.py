@@ -16,17 +16,18 @@ import time
 
 from gym_panda_frite.envs.debug_gui import Debug_Gui
 
-def import_ros_packages():
-	import rospy
-	import rospkg
-	from geometry_msgs.msg import PoseArray, Point, Quaternion
-	from geometry_msgs.msg import PoseStamped
 
-	from std_msgs.msg import Float64
-	from std_msgs.msg import Float64MultiArray
+import rospy
+import rospkg
+from geometry_msgs.msg import PoseArray, Point, Quaternion
+from geometry_msgs.msg import PoseStamped
 
-	from visualization_msgs.msg import MarkerArray, Marker
+from std_msgs.msg import Float64
+from std_msgs.msg import Float64MultiArray
 
+from visualization_msgs.msg import MarkerArray, Marker
+		
+		
 class PandaFriteEnvROS(gym.Env):
 	
 	def __init__(self, database = None, json_decoder = None, env_pybullet = None, gui = None):
@@ -41,7 +42,7 @@ class PandaFriteEnvROS(gym.Env):
 		is_ros_version = self.json_decoder.config_data["env"]["is_ros_version"]
 		if is_ros_version:
 			print("ROS VERSION !!!!!!!!!")
-			import_ros_packages()
+			self.import_ros_packages()
 		else:
 			print("NO ROS VERSION !!!!!!!!!!!!")
 		
@@ -93,6 +94,10 @@ class PandaFriteEnvROS(gym.Env):
 		self.observation_x_space = spaces.Box(low=np.array([self.observation_x_min]), high=np.array([self.observation_x_max]))
 		self.observation_y_space = spaces.Box(low=np.array([self.observation_y_min]), high=np.array([self.observation_y_max]))
 		self.observation_z_space = spaces.Box(low=np.array([self.observation_z_min]), high=np.array([self.observation_z_max]))
+		
+		
+		# for real
+		self.publish_init_pos_mesh = self.json_decoder.config_data["env_test"]["real"]["publish_init_pos_mesh"]
 		
 		# bullet env parameters + thread time_step
 		self.env_pybullet = env_pybullet
@@ -240,7 +245,17 @@ class PandaFriteEnvROS(gym.Env):
 		#self.show_cartesian_sliders()
 		
 		#p.stepSimulation()
+    
+	def import_ros_packages(self):
+		import rospy
+		import rospkg
+		from geometry_msgs.msg import PoseArray, Point, Quaternion
+		from geometry_msgs.msg import PoseStamped
 
+		from std_msgs.msg import Float64
+		from std_msgs.msg import Float64MultiArray
+
+		from visualization_msgs.msg import MarkerArray, Marker
 
 	def sample_random_action(self):
 		return np.array([self.action_x_space.sample(),self.action_y_space.sample(),self.action_z_space.sample()]).flatten()
@@ -435,12 +450,81 @@ class PandaFriteEnvROS(gym.Env):
 		self.publisher_position.publish(pose_msg)
 	
 	
-	def publish_mocap_mesh(self):
+	def publish_goal(self):
+		simple_marker_msg = Marker()
+		marker_array_msg = MarkerArray()
+		marker_array_msg.markers = []
+		
+		for i in range(len(self.goal)):
+			simple_marker_msg = Marker()
+			simple_marker_msg.header.frame_id = "panda_link0"
+			simple_marker_msg.header.stamp = rospy.get_rostime()
+			simple_marker_msg.ns = "goal_pos_in_arm_frame"
+			simple_marker_msg.action = simple_marker_msg.ADD
+
+			simple_marker_msg.type = simple_marker_msg.SPHERE
+			simple_marker_msg.scale.x = 0.01
+			simple_marker_msg.scale.y = 0.01
+			simple_marker_msg.scale.z = 0.01
+			simple_marker_msg.color.r = 1.0
+			simple_marker_msg.color.a = 1.0
+			simple_marker_msg.id = i+50
+			
+			simple_marker_msg.pose.position.x = self.goal[i][0]
+			simple_marker_msg.pose.position.y = self.goal[i][1]
+			simple_marker_msg.pose.position.z = self.goal[i][2]
+			simple_marker_msg.pose.orientation.x = 0
+			simple_marker_msg.pose.orientation.y = 0
+			simple_marker_msg.pose.orientation.z = 0
+			simple_marker_msg.pose.orientation.w = 1
+			
+			marker_array_msg.markers.append(simple_marker_msg)
+		
+		self.publisher_goal_in_arm_frame.publish(marker_array_msg)
+		
+	
+	def publish_initial_mesh_pos(self):
+		
+		intial_mesh_pos_array = np.array([[0.586 0.000 -0.225],[0.586 0.000 0.032],[0.586 0.000 0.288],[0.586 0.000 0.481]])
 		
 		simple_marker_msg = Marker()
 		marker_array_msg = MarkerArray()
 		marker_array_msg.markers = []
 		
+		for i in range(len(intial_mesh_pos_array)):
+			simple_marker_msg = Marker()
+			simple_marker_msg.header.frame_id = "panda_link0"
+			simple_marker_msg.header.stamp = rospy.get_rostime()
+			simple_marker_msg.ns = "intial_mesh_pos_in_arm_frame"
+			simple_marker_msg.action = simple_marker_msg.ADD
+
+			simple_marker_msg.type = simple_marker_msg.SPHERE
+			simple_marker_msg.scale.x = 0.01
+			simple_marker_msg.scale.y = 0.01
+			simple_marker_msg.scale.z = 0.01
+			simple_marker_msg.color.g = 1.0
+			simple_marker_msg.color.a = 1.0
+			simple_marker_msg.id = i+40
+			
+			simple_marker_msg.pose.position.x = intial_mesh_pos_array[i][0]
+			simple_marker_msg.pose.position.y = intial_mesh_pos_array[i][1]
+			simple_marker_msg.pose.position.z = intial_mesh_pos_array[i][2]
+			simple_marker_msg.pose.orientation.x = 0
+			simple_marker_msg.pose.orientation.y = 0
+			simple_marker_msg.pose.orientation.z = 0
+			simple_marker_msg.pose.orientation.w = 1
+			
+			marker_array_msg.markers.append(simple_marker_msg)
+		
+		self.publisher_intial_mesh_pos_in_arm_frame.publish(marker_array_msg)
+		
+	
+	def publish_mocap_mesh(self):
+		
+		simple_marker_msg = Marker()
+		marker_array_msg = MarkerArray()
+		marker_array_msg.markers = []
+		"""
 		line_strip_msg = Marker()
 		line_strip_msg.points = []
 		
@@ -456,7 +540,7 @@ class PandaFriteEnvROS(gym.Env):
 		line_strip_msg.color.b = 1.0
 		line_strip_msg.color.a = 1.0
 		line_strip_msg.pose.orientation.w = 1.0
-
+		"""
 
 		for i in range(len(self.poses_meshes_in_arm_frame)):
 			simple_marker_msg = Marker()
@@ -466,10 +550,10 @@ class PandaFriteEnvROS(gym.Env):
 			simple_marker_msg.action = simple_marker_msg.ADD
 
 			simple_marker_msg.type = simple_marker_msg.SPHERE
-			simple_marker_msg.scale.x = 0.02
-			simple_marker_msg.scale.y = 0.02
-			simple_marker_msg.scale.z = 0.02
-			simple_marker_msg.color.r = 1.0
+			simple_marker_msg.scale.x = 0.01
+			simple_marker_msg.scale.y = 0.01
+			simple_marker_msg.scale.z = 0.01
+			simple_marker_msg.color.b = 1.0
 			simple_marker_msg.color.a = 1.0
 			simple_marker_msg.id = i
 			
@@ -482,7 +566,7 @@ class PandaFriteEnvROS(gym.Env):
 			simple_marker_msg.pose.orientation.w = 1
 			
 			marker_array_msg.markers.append(simple_marker_msg)
-			
+			"""
 			if i > 0:
 				point_msg = Point()
 				point_msg.x = self.poses_meshes_in_arm_frame[i][0]
@@ -490,11 +574,13 @@ class PandaFriteEnvROS(gym.Env):
 				point_msg.z = self.poses_meshes_in_arm_frame[i][2]
 				
 				line_strip_msg.points.append(point_msg)
-			
+			"""
 		
 		self.publisher_poses_meshes_in_arm_frame.publish(marker_array_msg)
+		"""
 		self.publisher_line_strip_in_arm_frame.publish(line_strip_msg)
-	
+		"""
+		
 	def observation_callback(self, msg):
 		self.mutex_observation.acquire()
 		try:
@@ -523,13 +609,22 @@ class PandaFriteEnvROS(gym.Env):
 
 		self.matrix_mocap_frame_in_arm_frame = np.dot(self.matrix_base_frame_in_arm_frame, LA.inv(self.matrix_base_frame_in_mocap_frame))
 
-		for i in range(5):
-			pos_mesh_in_mocap_frame = np.array([msg.poses[i].position.x,msg.poses[i].position.y,msg.poses[i].position.z,1])
-			self.poses_meshes_in_arm_frame[i] = np.dot(self.matrix_mocap_frame_in_arm_frame, pos_mesh_in_mocap_frame)
+		self.mutex_array_mocap_in_arm_frame.acquire()
+		try:
+			for i in range(5):
+				pos_mesh_in_mocap_frame = np.array([msg.poses[i].position.x,msg.poses[i].position.y,msg.poses[i].position.z,1])
+				self.poses_meshes_in_arm_frame[i] = np.dot(self.matrix_mocap_frame_in_arm_frame, pos_mesh_in_mocap_frame)
+		finally:
+			self.mutex_array_mocap_in_arm_frame.release()	
+		
+		self.publish_goal()
 				
 		#self.draw_cross_mocap_mesh()
 		#print(len(self.poses_meshes_in_arm_frame))
 		self.publish_mocap_mesh()
+		
+		if self.publish_init_pos_mesh:
+			self.publish_initial_mesh_pos()
 		
 	def init_ros(self):
 		rospy.init_node('rl_melodie_node')
@@ -538,11 +633,11 @@ class PandaFriteEnvROS(gym.Env):
 		self.matrix_mocap_frame_in_arm_frame = None
 		self.init_cartesian_orientation = np.array([1.000, 0.000, 0.000, 0.000])
 										
-		# x = 0, y = 30 cm , 0.3 m								
+		# x = -0.0088, y = 0.3064 cm  z = 0.017, 0.3 m								
 		self.matrix_base_frame_in_arm_frame = np.array(
-											[[1, 0, 0, -0.0088],
-											[0, 1, 0, 0.3064],
-											[0, 0, 1, 0.017],
+											[[1, 0, 0, 0.015],
+											[0, 1, 0, 0.34],
+											[0, 0, 1, 0.005],
 											[0, 0, 0, 1]]
 										)
 										
@@ -550,6 +645,8 @@ class PandaFriteEnvROS(gym.Env):
 		
 		self.mutex_observation = threading.Lock()
 		self.mutex_array_mocap = threading.Lock()
+		
+		self.mutex_array_mocap_in_arm_frame = threading.Lock()
 		
 		
 		rospy.Subscriber('/PoseAllBodies', PoseArray, self.mocap_callback,
@@ -560,7 +657,11 @@ class PandaFriteEnvROS(gym.Env):
 						 
 		self.publisher_poses_meshes_in_arm_frame = rospy.Publisher('/VisualizationPoseArrayMarkersInArmFrame', MarkerArray, queue_size=10)
 		
-		self.publisher_line_strip_in_arm_frame = rospy.Publisher('/VisualizationLineStripMarkerInArmFrame', Marker, queue_size=10)
+		self.publisher_intial_mesh_pos_in_arm_frame = rospy.Publisher('/VisualizationInitialPoseArrayMarkersInArmFrame', MarkerArray, queue_size=10)
+		
+		self.publisher_goal_in_arm_frame = rospy.Publisher('/VisualizationGoalArrayMarkersInArmFrame', MarkerArray, queue_size=10)
+		
+		#self.publisher_line_strip_in_arm_frame = rospy.Publisher('/VisualizationLineStripMarkerInArmFrame', Marker, queue_size=10)
 		
 		self.publisher_position = rospy.Publisher('/cartesian_impedance_example_controller/equilibrium_pose', PoseStamped, queue_size=10)
 		
