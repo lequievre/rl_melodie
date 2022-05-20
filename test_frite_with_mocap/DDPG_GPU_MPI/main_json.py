@@ -359,9 +359,96 @@ def main():
 		file_pos.close()
 		input("hit return to finish  !")
 		"""
-		env.init_ros()
 		
-		input("hit return ro finish !")
+		input("hit return to start test !")
+				
+		start=datetime.now()
+		
+		file_log.write("mode test real !\n")
+		
+		print("mode test real !")
+		
+		agent.load()
+		n_episodes = json_decoder.config_data["env_test"]["n_episodes"]
+		n_steps = json_decoder.config_data["env_test"]["n_steps"]
+		do_reset_env = json_decoder.config_data["env"]["do_reset_env"]
+		wait_time_sleep_after_draw_env_box = json_decoder.config_data["env_test"]["wait_time_sleep_after_draw_env_box"]
+		wait_time_sleep_end_episode = json_decoder.config_data["env_test"]["wait_time_sleep_end_episode"]
+		do_episode_hit_return = json_decoder.config_data["env_test"]["do_episode_hit_return"]
+		
+		file_log.write("** ENV MODE TEST **\n")
+		file_log.write("config_file = {}\n".format(args.config_file))
+		file_log.write("n_episodes = {}\n".format(n_episodes))
+		file_log.write("n_steps = {}\n".format(n_steps))
+		file_log.write("do_reset_env = {}\n".format(do_reset_env))
+		file_log.write("wait_time_sleep_after_draw_env_box = {}\n".format(wait_time_sleep_after_draw_env_box))
+		file_log.write("wait_time_sleep_end_episode = {}\n".format(wait_time_sleep_end_episode))
+		file_log.write("do_episode_hit_return = {}\n".format(do_episode_hit_return))
+		
+		print("** ENV MODE TEST **")
+		print("n_episodes = {}".format(n_episodes))
+		print("n_steps = {}".format(n_steps))
+		print("do_reset_env = {}".format(do_reset_env))
+		print("wait_time_sleep_after_draw_env_box = {}".format(wait_time_sleep_after_draw_env_box))
+		print("wait_time_sleep_end_episode = {}".format(wait_time_sleep_end_episode))
+		print("do_episode_hit_return = {}".format(do_episode_hit_return))
+				
+		nb_dones = 0
+		sum_distance_error = 0
+		for episode in range(n_episodes):
+			print("Episode : {}".format(episode))
+			file_log.write("Episode : {}\n".format(episode))
+		   
+			input("hit return to launch episode !")
+			state = env.reset_ros()
+			
+			if do_reset_env:
+				env.go_to_home_position()
+			
+			current_distance_error = 0
+			
+			for step in range(n_steps):
+				action = agent.get_action(state)
+				
+				print("action={}".format(action))
+				file_log.write("action = {}\n".format(action))
+			   
+				new_state, reward, done, info = env.step_ros(action)
+				current_distance_error = info['max_distance_error']
+				
+				print("step={}, distance_error={}\n".format(step,info['max_distance_error']))
+				file_log.write("step={}, distance_error={}\n".format(step,info['max_distance_error']))
+				
+				#print("step={}, action={}, reward={}, done={}, info={}".format(step,action,reward, done, info))
+				state = new_state
+			   
+				if done:
+				   print("done with step={}  !".format(step))
+				   file_log.write("done with step={}  !\n".format(step))
+				   
+				   nb_dones+=1
+				   break
+				   
+			
+			time.sleep(wait_time_sleep_end_episode)
+			
+		   
+			sum_distance_error += current_distance_error
+		print("time_set_action = {}".format(env_time_set_action))
+		print("nb dones = {}".format(nb_dones))
+		print("mean distance error = {}".format(sum_distance_error/n_episodes))
+		print("sum distance error = {}".format(sum_distance_error))
+		print("time elapsed = {}".format(datetime.now()-start))
+		
+		file_log.write("time_set_action = {}\n".format(env_time_set_action))
+		file_log.write("nb dones = {}\n".format(nb_dones))
+		file_log.write("mean distance error = {}\n".format(sum_distance_error/n_episodes))
+		file_log.write("sum distance error = {}\n".format(sum_distance_error))
+		file_log.write("time elapsed = {}\n".format(datetime.now()-start))
+		
+		file_log.close()
+		
+		input("hit return !")
 		
 	elif args.mode == 'deformation':
 		state = env.reset_env(use_frite=True)

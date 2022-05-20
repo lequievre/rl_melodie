@@ -232,11 +232,14 @@ class PandaFriteEnvROS(gym.Env):
 		self.database.set_env(self)
 		self.database.load()
 		
-		
-		self.reset_env(use_frite=True)
-		self.reset()
-		
-		self.panda_list_lower_limits, self.panda_list_upper_limits, self.panda_list_joint_ranges, self.panda_list_initial_poses = self.get_panda_joint_ranges()
+		if is_ros_version:
+			self.init_ros()
+			time.sleep(5)
+			self.reset_ros()
+		else:
+			self.reset_env(use_frite=True)
+			self.reset()
+			self.panda_list_lower_limits, self.panda_list_upper_limits, self.panda_list_joint_ranges, self.panda_list_initial_poses = self.get_panda_joint_ranges()
 			 
 		# show sliders
 		self.panda_joint_name_to_slider={}
@@ -463,10 +466,10 @@ class PandaFriteEnvROS(gym.Env):
 			simple_marker_msg.action = simple_marker_msg.ADD
 
 			simple_marker_msg.type = simple_marker_msg.SPHERE
-			simple_marker_msg.scale.x = 0.01
-			simple_marker_msg.scale.y = 0.01
-			simple_marker_msg.scale.z = 0.01
-			simple_marker_msg.color.r = 1.0
+			simple_marker_msg.scale.x = 0.02
+			simple_marker_msg.scale.y = 0.02
+			simple_marker_msg.scale.z = 0.02
+			simple_marker_msg.color.g = 1.0
 			simple_marker_msg.color.a = 1.0
 			simple_marker_msg.id = i+50
 			
@@ -485,7 +488,7 @@ class PandaFriteEnvROS(gym.Env):
 	
 	def publish_initial_mesh_pos(self):
 		
-		intial_mesh_pos_array = np.array([[0.586 0.000 -0.225],[0.586 0.000 0.032],[0.586 0.000 0.288],[0.586 0.000 0.481]])
+		intial_mesh_pos_array = np.array([[0.586, 0.000, -0.225],[0.586, 0.000, 0.032],[0.586, 0.000, 0.288],[0.586, 0.000, 0.481]])
 		
 		simple_marker_msg = Marker()
 		marker_array_msg = MarkerArray()
@@ -499,9 +502,9 @@ class PandaFriteEnvROS(gym.Env):
 			simple_marker_msg.action = simple_marker_msg.ADD
 
 			simple_marker_msg.type = simple_marker_msg.SPHERE
-			simple_marker_msg.scale.x = 0.01
-			simple_marker_msg.scale.y = 0.01
-			simple_marker_msg.scale.z = 0.01
+			simple_marker_msg.scale.x = 0.02
+			simple_marker_msg.scale.y = 0.02
+			simple_marker_msg.scale.z = 0.02
 			simple_marker_msg.color.g = 1.0
 			simple_marker_msg.color.a = 1.0
 			simple_marker_msg.id = i+40
@@ -550,10 +553,10 @@ class PandaFriteEnvROS(gym.Env):
 			simple_marker_msg.action = simple_marker_msg.ADD
 
 			simple_marker_msg.type = simple_marker_msg.SPHERE
-			simple_marker_msg.scale.x = 0.01
-			simple_marker_msg.scale.y = 0.01
-			simple_marker_msg.scale.z = 0.01
-			simple_marker_msg.color.b = 1.0
+			simple_marker_msg.scale.x = 0.02
+			simple_marker_msg.scale.y = 0.02
+			simple_marker_msg.scale.z = 0.02
+			simple_marker_msg.color.g = 1.0
 			simple_marker_msg.color.a = 1.0
 			simple_marker_msg.id = i
 			
@@ -627,6 +630,7 @@ class PandaFriteEnvROS(gym.Env):
 			self.publish_initial_mesh_pos()
 		
 	def init_ros(self):
+		print("INIT ROS !!!!!!!!!!!!")
 		rospy.init_node('rl_melodie_node')
 		
 		self.matrix_base_frame_in_mocap_frame = None
@@ -647,6 +651,9 @@ class PandaFriteEnvROS(gym.Env):
 		self.mutex_array_mocap = threading.Lock()
 		
 		self.mutex_array_mocap_in_arm_frame = threading.Lock()
+		
+		# sample a new goal
+		self.goal = self.sample_goal()
 		
 		
 		rospy.Subscriber('/PoseAllBodies', PoseArray, self.mocap_callback,
@@ -992,6 +999,62 @@ class PandaFriteEnvROS(gym.Env):
 		
 		self.set_action(action)
 		#p.stepSimulation()
+
+
+	def set_gym_spaces_ros(self):
+		
+		self.mutex_observation.acquire()
+		try:
+			
+			tip_position = self.tip_position.copy()
+			
+		finally:
+			self.mutex_observation.release()
+		
+		goal_index = self.json_decoder.config_data["env"]["gym_spaces"]["goal"]
+		
+		goal_x_up = self.json_decoder.config_data["env"]["gym_spaces"]["spaces"][goal_index]["x_up"]
+		goal_x_down = self.json_decoder.config_data["env"]["gym_spaces"]["spaces"][goal_index]["x_down"]
+		goal_y_up = self.json_decoder.config_data["env"]["gym_spaces"]["spaces"][goal_index]["y_up"]
+		goal_y_down = self.json_decoder.config_data["env"]["gym_spaces"]["spaces"][goal_index]["y_down"]
+		goal_z_down = self.json_decoder.config_data["env"]["gym_spaces"]["spaces"][goal_index]["z_down"]
+		
+		low_x_down = tip_position[0]-goal_x_down
+		low_x_up = tip_position[0]+goal_x_up
+		
+		low_y_down = tip_position[1]-goal_y_down
+		low_y_up = tip_position[1]+goal_y_up
+		
+		low_z_down = tip_position[2]-goal_z_down
+		low_z_up = tip_position[2]
+		
+		self.goal_space = spaces.Box(low=np.array([low_x_down, low_y_down ,low_z_down]), high=np.array([low_x_up, low_y_up ,low_z_up]))
+		
+		pose_index = self.json_decoder.config_data["env"]["gym_spaces"]["pose"]
+		
+		pose_x_up = self.json_decoder.config_data["env"]["gym_spaces"]["spaces"][pose_index]["x_up"]
+		pose_x_down = self.json_decoder.config_data["env"]["gym_spaces"]["spaces"][pose_index]["x_down"]
+		pose_y_up = self.json_decoder.config_data["env"]["gym_spaces"]["spaces"][pose_index]["y_up"]
+		pose_y_down = self.json_decoder.config_data["env"]["gym_spaces"]["spaces"][pose_index]["y_down"]
+		pose_z_down = self.json_decoder.config_data["env"]["gym_spaces"]["spaces"][pose_index]["z_down"]
+		
+		low_x_down = tip_position[0]-pose_x_down
+		low_x_up = tip_position[0]+pose_x_up
+		
+		low_y_down = tip_position[1]-pose_y_down
+		low_y_up = tip_position[1]+pose_y_up
+		
+		
+		low_z_down = tip_position[2]-pose_z_down
+		low_z_up = tip_position[2]
+		
+		self.pos_space = spaces.Box(low=np.array([low_x_down, low_y_down ,low_z_down]), high=np.array([low_x_up, low_y_up ,low_z_up]))
+		
+		# action_space = cartesian world velocity (vx, vy, vz)  = 3 float
+		self.action_space = spaces.Box(-1., 1., shape=(3,), dtype=np.float32)
+		
+		# observation = 30 float -> see function _get_obs
+		self.observation_space = spaces.Box(np.finfo(np.float32).min, np.finfo(np.float32).max, shape=(30,), dtype=np.float32)
 
 	
 	def set_gym_spaces(self):
@@ -1426,6 +1489,23 @@ class PandaFriteEnvROS(gym.Env):
 		for i in range(len(jointPoses)):
 			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=self.joint_motor_control_force * 240.)
 			
+			
+	def set_action_ros(self, action):
+		assert action.shape == (3,), 'action shape error'
+		
+		self.mutex_observation.acquire()
+		try:
+			
+			tip_position = self.tip_position.copy()
+			
+		finally:
+			self.mutex_observation.release()
+			
+		new_pos = tip_position + np.array(action[:3]) * self.max_vel * self.dt
+		#new_pos = np.clip(new_pos, self.pos_space.low, self.pos_space.high)
+		
+		self.go_to_position(new_pos)
+		
 		
 	def set_action(self, action):
 		assert action.shape == (3,), 'action shape error'
@@ -1442,6 +1522,33 @@ class PandaFriteEnvROS(gym.Env):
 		for i in range(len(jointPoses)):
 			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=self.joint_motor_control_force * 240.)
 	
+	def get_obs_ros(self):
+		
+		self.mutex_observation.acquire()
+		try:
+			
+			tip_position = self.tip_position.copy()
+			
+			tip_velocity = self.tip_velocity.copy()
+			
+		finally:
+			self.mutex_observation.release()
+			
+			
+		self.mutex_array_mocap_in_arm_frame.acquire()
+		try:
+			poses_meshes_in_arm_frame = self.poses_meshes_in_arm_frame[1:5,0:3].copy()
+			
+		finally:
+			self.mutex_array_mocap_in_arm_frame.release()	
+		
+		print("----->", poses_meshes_in_arm_frame.flatten())
+		obs = np.concatenate((
+					tip_position, tip_velocity, poses_meshes_in_arm_frame.flatten().astype('float64'), self.goal.flatten()
+		))
+		
+		return obs
+		
 	
 	def get_obs(self):
 		eff_link_state = p.getLinkState(self.panda_id, self.panda_end_eff_idx, computeLinkVelocity=1)
@@ -1470,6 +1577,40 @@ class PandaFriteEnvROS(gym.Env):
 	
 	def is_success(self, d):
 		return (d < self.distance_threshold).astype(np.float32)
+		
+	def step_ros(self, action):
+		action = np.clip(action, self.action_space.low, self.action_space.high)
+		new_gripper_pos = self.set_action_ros(action)
+		
+		time.sleep(self.time_set_action)
+		
+		obs = self.get_obs_ros()
+
+		done = True
+		
+		nb_mesh_to_follow = len(self.position_mesh_to_follow)
+		
+		max_d = 0
+		
+		for i in range(nb_mesh_to_follow):
+			current_pos_mesh = obs[(6+(i*3)):(6+(i*3)+3)]
+			goal_pos_id_frite = self.goal[i]
+			d =  np.linalg.norm(current_pos_mesh - goal_pos_id_frite, axis=-1)
+			if (d > max_d):
+				max_d = d
+
+		info = {
+			'is_success': self.is_success(max_d),
+			'max_distance_error' : max_d,
+		}
+		
+		reward = -max_d
+		if (max_d > self.distance_threshold):
+			done = False
+
+		# p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, self.if_render) enble if want to control rendering 
+		return obs, reward, done, info
+		
 		
 	def step(self, action):
 		action = np.clip(action, self.action_space.low, self.action_space.high)
@@ -1545,6 +1686,18 @@ class PandaFriteEnvROS(gym.Env):
 			# close gripper
 			#self.close_gripper()
 			#p.stepSimulation()
+	
+	
+	def reset_ros(self):
+		
+		
+		self.set_gym_spaces_ros()
+		
+		# sample a new goal
+		self.goal = self.sample_goal()
+		
+		return self.get_obs_ros()
+		
 		
 	def reset(self):
 		# sample a new goal
