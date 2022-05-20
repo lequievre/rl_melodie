@@ -1,0 +1,10 @@
+** ENV MODE TRAIN **
+config_file = ./trains_tests/version_json/test_real_train/config.json
+n_episodes = 3
+n_steps = 20
+do_reset_env = True
+=> [2022-05-20 15:47:54.741921] episode is: 0, eval success rate is: -5.367
+=> [2022-05-20 15:49:43.666697] episode is: 1, eval success rate is: -2.133
+=> [2022-05-20 15:51:34.793379] episode is: 2, eval success rate is: -3.811
+end mode train !
+time elapsed = 0:05:28.533714

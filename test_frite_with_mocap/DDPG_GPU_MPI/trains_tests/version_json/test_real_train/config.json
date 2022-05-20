@@ -12,7 +12,7 @@
 		"time_step": 0.003,
 		"time_step_sleep": 0.030,
 		"n_substeps": 20,
-		"time_set_action": 1.0,
+		"time_set_action": 5.0,
 		"do_reset_env": true,
 		"id_frite_to_follow": [ [31, 15], [13, 10], [18, 14], [28, 53] ],
 		"under_id_frite_to_follow": [ [63, 38], [58, 54], [42, 37], [23, 32] ],
@@ -75,14 +75,14 @@
 		}
 	},
 	"env_train": {
-		"n_episodes": 63,
-		"n_steps": 300
+		"n_episodes": 3,
+		"n_steps": 20
 	},
 	"ddpg": {
 		 "log_interval": 3,
 		 "batch_size": 128,
 		 "max_memory_size": 50000,
-		 "load": false,
+		 "load": true,
 		 "cuda": false
 	},
 	"database": {

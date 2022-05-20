@@ -340,6 +340,79 @@ def main():
 			keys = p.getKeyboardEvents()
 			if 65309 in keys:
 			   break
+			   
+	elif args.mode == 'train_real':
+		start=datetime.now()
+		
+		n_episodes = json_decoder.config_data["env_train"]["n_episodes"]
+		n_steps = json_decoder.config_data["env_train"]["n_steps"]
+		do_reset_env = json_decoder.config_data["env"]["do_reset_env"]
+		ddpg_load = json_decoder.config_data["ddpg"]["load"]
+		
+		print("** ENV MODE TRAIN **")
+		print("n_episodes = {}".format(n_episodes))
+		print("n_steps = {}".format(n_steps))
+		print("do_reset_env = {}".format(do_reset_env))
+		
+		if rank == 0:
+			file_log.write("** ENV MODE TRAIN **\n")
+			file_log.write("config_file = {}\n".format(args.config_file))
+			file_log.write("n_episodes = {}\n".format(n_episodes))
+			file_log.write("n_steps = {}\n".format(n_steps))
+			file_log.write("do_reset_env = {}\n".format(do_reset_env))
+		
+		if ddpg_load:
+			agent.load()
+			
+		global_step_number = 0
+		
+		for episode in range(n_episodes):
+			#print("** rank {}, episode {}".format(rank,episode))
+			if do_reset_env:
+				env.go_to_home_position()
+				time.sleep(env_time_set_action)
+			
+			state = env.reset_ros()
+			   
+			noise.reset()
+			episode_reward = 0
+			for step in range(n_steps):
+				action = agent.get_action(state)
+				action = noise.get_action(action, step)
+				new_state, reward, done, info = env.step_ros(action) 
+				agent.memory.push(state, action, reward, new_state, done)
+				global_step_number += 1
+
+				if len(agent.memory) > ddpg_batch_size:
+					agent.update(ddpg_batch_size)
+
+				state = new_state
+				episode_reward += reward
+				   
+
+		   
+			#print('[{}] rank is: {}, episode is: {}, episode reward is: {:.3f}'.format(datetime.now(), rank, episode, episode_reward))
+			
+			
+			global_reward = MPI.COMM_WORLD.allreduce(episode_reward, op=MPI.SUM)/MPI.COMM_WORLD.Get_size()
+			list_global_rewards.append(global_reward)
+			
+			if rank == 0:
+				print('=> [{}] episode is: {}, eval success rate is: {:.3f}'.format(datetime.now(), episode, list_global_rewards[episode]))
+				file_log.write('=> [{}] episode is: {}, eval success rate is: {:.3f}\n'.format(datetime.now(), episode, list_global_rewards[episode])) 
+				file_log.flush()
+				
+				if episode % ddpg_log_interval == 0:
+					agent.save()
+				  
+		if rank == 0:          
+		   agent.save()
+		   print("end mode train !")
+		   print("time elapsed = {}".format(datetime.now()-start))
+		   file_log.write("end mode train !\n")
+		   file_log.write("time elapsed = {}\n".format(datetime.now()-start))
+		   file_log.close()
+		
 	elif args.mode == 'test_real':
 		"""
 		input("hit return to start !")
@@ -400,10 +473,11 @@ def main():
 			file_log.write("Episode : {}\n".format(episode))
 		   
 			input("hit return to launch episode !")
-			state = env.reset_ros()
-			
 			if do_reset_env:
 				env.go_to_home_position()
+				time.sleep(env_time_set_action)
+			
+			state = env.reset_ros()
 			
 			current_distance_error = 0
 			

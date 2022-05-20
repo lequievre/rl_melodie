@@ -556,7 +556,7 @@ class PandaFriteEnvROS(gym.Env):
 			simple_marker_msg.scale.x = 0.02
 			simple_marker_msg.scale.y = 0.02
 			simple_marker_msg.scale.z = 0.02
-			simple_marker_msg.color.g = 1.0
+			simple_marker_msg.color.b = 1.0
 			simple_marker_msg.color.a = 1.0
 			simple_marker_msg.id = i
 			
@@ -1502,7 +1502,7 @@ class PandaFriteEnvROS(gym.Env):
 			self.mutex_observation.release()
 			
 		new_pos = tip_position + np.array(action[:3]) * self.max_vel * self.dt
-		#new_pos = np.clip(new_pos, self.pos_space.low, self.pos_space.high)
+		new_pos = np.clip(new_pos, self.pos_space.low, self.pos_space.high)
 		
 		self.go_to_position(new_pos)
 		
