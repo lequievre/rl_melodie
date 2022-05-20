@@ -96,6 +96,6 @@
 		}
 	},
 	"log": {
-		"name": "log.txt"
+		"name": "log_test.txt"
 	}
 }

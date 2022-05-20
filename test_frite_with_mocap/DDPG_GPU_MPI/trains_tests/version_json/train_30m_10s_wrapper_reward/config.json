@@ -4,7 +4,7 @@
 		"name": "PandaFrite-v1",
 		"vtk_file_name": "frite.vtk",
 		"random_seed": 9527,
-		"distance_threshold": 0.03,
+		"distance_threshold": 0.05,
 		"E": 2.5,
 		"NU": 0.3,
 		"dt_factor": 1.0,
@@ -12,7 +12,7 @@
 		"time_step": 0.003,
 		"time_step_sleep": 0.030,
 		"n_substeps": 20,
-		"time_set_action": 1.0,
+		"time_set_action": 10.0,
 		"do_reset_env": true,
 		"id_frite_to_follow": [ [31, 15], [13, 10], [18, 14], [28, 53] ],
 		"under_id_frite_to_follow": [ [63, 38], [58, 54], [42, 37], [23, 32] ],
@@ -51,22 +51,22 @@
 		},
 		"observation": {
 				"x": {
-						"min": -0.1,
-						"max": 0.1
+						"min": -0.01,
+						"max": 0.01
 					},
 				"y": {
-					"min": -0.1,
-					"max": 0.1
+					"min": -0.01,
+					"max": 0.01
 				},
 				"z": {
-					"min": -0.1,
-					"max": 0.1
+					"min": -0.01,
+					"max": 0.01
 				}				
 		}
 	},
 	"env_test": {
 		"n_episodes": 100,
-		"n_steps": 20,
+		"n_steps": 10,
 		"do_episode_hit_return": false,
 		"wait_time_sleep_end_episode": 0.0,
 		"wait_time_sleep_after_draw_env_box": 0.0
@@ -92,10 +92,10 @@
 			"type_db": 0
 		},
 		"load": {
-			"type_db": 0
+			"type_db": 1
 		}
 	},
 	"log": {
-		"name": "log.txt"
+		"name": "log_test.txt"
 	}
 }
