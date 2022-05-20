@@ -69,7 +69,10 @@
 		"n_steps": 20,
 		"do_episode_hit_return": false,
 		"wait_time_sleep_end_episode": 0.0,
-		"wait_time_sleep_after_draw_env_box": 0.0
+		"wait_time_sleep_after_draw_env_box": 0.0,
+		"real": {
+				"publish_init_pos_mesh": false
+		}
 	},
 	"env_train": {
 		"n_episodes": 63,
