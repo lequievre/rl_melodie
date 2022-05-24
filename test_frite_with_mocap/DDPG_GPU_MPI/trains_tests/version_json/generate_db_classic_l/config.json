@@ -1,0 +1,104 @@
+{
+	"env": {
+		"is_ros_version": false,
+		"name": "PandaFrite-v1",
+		"vtk_file_name": "frite.vtk",
+		"random_seed": 9527,
+		"distance_threshold": 0.02,
+		"E": 2.5,
+		"NU": 0.3,
+		"dt_factor": 1.0,
+		"joint_motor_control_force": 100.0,
+		"time_step": 0.003,
+		"time_step_sleep": 0.030,
+		"n_substeps": 20,
+		"time_set_action": 3.0,
+		"do_reset_env": true,
+		"id_frite_to_follow": [ [31, 15], [13, 10], [18, 14], [28, 53] ],
+		"under_id_frite_to_follow": [ [63, 38], [58, 54], [42, 37], [23, 32] ],
+		"gym_spaces":
+		{
+			"spaces":[{"name": "extra_small","x_up": 0.025,"x_down": 0.05,"y_up": 0.15,"y_down": 0.15,"z_down": 0.1},{"name": "small","x_up": 0.05,"x_down": 0.1,"y_up": 0.25,"y_down": 0.25,"z_down": 0.25},{"name": "medium","x_up": 0.05,"x_down": 0.15,"y_up": 0.3,"y_down": 0.3,"z_down": 0.25},{"name": "large","x_up": 0.05,"x_down": 0.15,"y_up": 0.4,"y_down": 0.4,"z_down": 0.3}],
+			"goal": 3,
+			"pose": 3
+		}
+	},
+	"randomization": {
+		"frite": {
+			"do_random": false,
+			"E": {
+				"min": 0.1,
+				"max": 35
+			},
+			"NU": {
+				"min": 0.40,
+				"max": 0.46
+			}
+		},
+		"action": {
+				"x": {
+						"min": -0.1,
+						"max": 0.1
+					},
+				"y": {
+					"min": -0.1,
+					"max": 0.1
+				},
+				"z": {
+					"min": -0.1,
+					"max": 0.1
+				}				
+		},
+		"observation": {
+				"x": {
+						"min": -0.01,
+						"max": 0.01
+					},
+				"y": {
+					"min": -0.01,
+					"max": 0.01
+				},
+				"z": {
+					"min": -0.01,
+					"max": 0.01
+				}				
+		}
+	},
+	"env_test": {
+		"n_episodes": 100,
+		"n_steps": 10,
+		"do_episode_hit_return": false,
+		"wait_time_sleep_end_episode": 0.0,
+		"wait_time_sleep_after_draw_env_box": 0.0,
+		"real": {
+				"publish_init_pos_mesh": false
+		}
+	},
+	"env_train": {
+		"n_episodes": 63,
+		"n_steps": 300
+	},
+	"ddpg": {
+		 "log_interval": 3,
+		 "batch_size": 128,
+		 "max_memory_size": 50000,
+		 "load": false,
+		 "cuda": false
+	},
+	"database": {
+		"name": "db.txt",
+		"generate": {
+			"nb_x": 8,
+			"nb_y": 22,
+			"nb_z": 10,
+			"nb_random_goal": 800,
+			"type_db": 0
+		},
+		"load": {
+			"type_db": 0
+		}
+	},
+	"log": {
+		"name": "log_generate_db.txt"
+	}
+}
