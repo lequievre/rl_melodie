@@ -1,0 +1,13 @@
+** ENV MODE TRAIN **
+config_file = ./trains_tests/version_json/train_30m_10s_wrapper_reward_rotation_gripper/config.json
+n_episodes = 63
+n_steps = 3
+do_reset_env = True
+=> [2022-05-25 18:01:41.728142] episode is: 0, eval success rate is: -0.948
+=> [2022-05-25 18:01:45.305543] episode is: 1, eval success rate is: -0.532
+=> [2022-05-25 18:01:48.837150] episode is: 2, eval success rate is: -1.068
+=> [2022-05-25 18:01:52.413691] episode is: 3, eval success rate is: -0.848
+=> [2022-05-25 18:01:56.023220] episode is: 4, eval success rate is: -0.954
+=> [2022-05-25 18:01:59.607072] episode is: 5, eval success rate is: -0.894
+=> [2022-05-25 18:02:03.228786] episode is: 6, eval success rate is: -1.267
+=> [2022-05-25 18:02:06.826100] episode is: 7, eval success rate is: -0.666
