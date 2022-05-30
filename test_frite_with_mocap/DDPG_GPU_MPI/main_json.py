@@ -342,6 +342,8 @@ def main():
 			   break
 			   
 	elif args.mode == 'train_real':
+		input("hit return to start test !")
+		
 		start=datetime.now()
 		
 		n_episodes = json_decoder.config_data["env_train"]["n_episodes"]
@@ -388,6 +390,12 @@ def main():
 
 				state = new_state
 				episode_reward += reward
+				
+				if done:
+					print("done with step={}  !".format(step))
+					if rank == 0:
+						file_log.write("done with step={}  !\n".format(step))
+					break
 				   
 
 		   
