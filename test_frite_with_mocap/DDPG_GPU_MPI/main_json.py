@@ -153,12 +153,12 @@ def main():
 				file_log.write("action = {}\n".format(action))
 			   
 				new_state, reward, done, info = env.step(action)
-				current_distance_error = info['mean_distance_error']
+				current_distance_error = info['max_distance_error']
 				if (args.gui):
 					env.draw_id_to_follow()
 				
-				print("step={}, distance_error={}\n".format(step,info['mean_distance_error']))
-				file_log.write("step={}, distance_error={}\n".format(step,info['mean_distance_error']))
+				print("step={}, distance_error={}\n".format(step,info['max_distance_error']))
+				file_log.write("step={}, distance_error={}\n".format(step,info['max_distance_error']))
 				
 				#print("step={}, action={}, reward={}, done={}, info={}".format(step,action,reward, done, info))
 				state = new_state

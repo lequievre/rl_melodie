@@ -14,3 +14,9 @@ register(
     entry_point='gym_panda_frite.envs:PandaFriteEnvROS',
     kwargs={'database': None, 'json_decoder' : None, 'env_pybullet': None, 'gui': None}
 )
+
+register(
+    id='PandaFrite-v2',
+    entry_point='gym_panda_frite.envs:PandaFriteEnvROSRotationGripper',
+    kwargs={'database': None, 'json_decoder' : None, 'env_pybullet': None, 'gui': None}
+)
