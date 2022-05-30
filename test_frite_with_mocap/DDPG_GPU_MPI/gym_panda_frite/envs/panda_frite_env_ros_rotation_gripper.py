@@ -414,8 +414,9 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		goal = np.array(self.goal_space.sample())
 		return goal.copy()
 		
-	def go_to_position(self, a_position):
-		self.publish_position(a_position)
+		
+	def go_to_position(self, a_position, an_orientation = None):
+		self.publish_position(a_position,an_orientation)
 		
 		start=datetime.now()
 		
@@ -439,18 +440,25 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		# End Eff home position => x=0.554, y=0.000, z=0.521
 		self.go_to_position(np.array([0.554, 0.000, 0.521]))
 			
-	def publish_position(self, command):
+	def publish_position(self, command, an_orientation = None):
 		pose_msg = PoseStamped()
 		pose_msg.pose.position.x = command[0]
 		pose_msg.pose.position.y = command[1]
 		pose_msg.pose.position.z = command[2]
 	
-		pose_msg.pose.orientation.x = self.init_cartesian_orientation[0]
-		pose_msg.pose.orientation.y = self.init_cartesian_orientation[1]
-		pose_msg.pose.orientation.z = self.init_cartesian_orientation[2]
-		pose_msg.pose.orientation.w = self.init_cartesian_orientation[3]
+		if (orientation == None):
+			pose_msg.pose.orientation.x = self.init_cartesian_orientation[0]
+			pose_msg.pose.orientation.y = self.init_cartesian_orientation[1]
+			pose_msg.pose.orientation.z = self.init_cartesian_orientation[2]
+			pose_msg.pose.orientation.w = self.init_cartesian_orientation[3]
+		else:
+			pose_msg.pose.orientation.x = an_orientation[0]
+			pose_msg.pose.orientation.y = an_orientation[1]
+			pose_msg.pose.orientation.z = an_orientation[2]
+			pose_msg.pose.orientation.w = an_orientation[3]
 		
 		self.publisher_position.publish(pose_msg)
+		
 	
 	
 	def publish_goal(self):
@@ -593,6 +601,13 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 			
 			tip_velocity_list = [msg.data[3], msg.data[4], msg.data[5]]
 			self.tip_velocity = np.array(tip_velocity_list)
+			
+			tip_orientation_list = p.getEulerFromQuaternion([msg.data[6], msg.data[7], msg.data[8], msg.data[9]])
+			self.tip_orientation = np.array(tip_orientation_list)
+			
+			tip_velocity_orientation_list = [msg.data[10], msg.data[11], msg.data[12]]
+			self.tip_velocity_orientation = np.array(tip_velocity_orientation_list)
+			
 			
 		finally:
 			self.mutex_observation.release()	
@@ -1491,12 +1506,14 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 			
 			
 	def set_action_ros(self, action):
-		assert action.shape == (3,), 'action shape error'
+		assert action.shape == (6,), 'action shape error'
 		
 		self.mutex_observation.acquire()
 		try:
 			
 			tip_position = self.tip_position.copy()
+			
+			tip_orientation = self.tip_orientation.copy()
 			
 		finally:
 			self.mutex_observation.release()
@@ -1504,7 +1521,10 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		new_pos = tip_position + np.array(action[:3]) * self.max_vel * self.dt
 		new_pos = np.clip(new_pos, self.pos_space.low, self.pos_space.high)
 		
-		self.go_to_position(new_pos)
+		new_orien_euler = tip_orientation + np.array(action[3:]) * self.max_vel * self.dt
+		new_orien_quaternion = p.getQuaternionFromEuler(new_orien_euler)
+		
+		self.go_to_position(new_pos, new_orien_quaternion)
 		
 		
 	def set_action(self, action):
@@ -1536,6 +1556,10 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 			
 			tip_velocity = self.tip_velocity.copy()
 			
+			tip_orientation = self.tip_orientation.copy()
+			
+			tip_velocity_orientation = self.tip_velocity_orientation.copy()
+			
 		finally:
 			self.mutex_observation.release()
 			
@@ -1549,7 +1573,7 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		
 		print("----->", poses_meshes_in_arm_frame.flatten())
 		obs = np.concatenate((
-					tip_position, tip_velocity, poses_meshes_in_arm_frame.flatten().astype('float64'), self.goal.flatten()
+					tip_position, tip_orientation, tip_velocity, tip_velocity_orientation, poses_meshes_in_arm_frame.flatten().astype('float64'), self.goal.flatten()
 		))
 		
 		return obs
@@ -1603,7 +1627,7 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		max_d = 0
 		
 		for i in range(nb_mesh_to_follow):
-			current_pos_mesh = obs[(6+(i*3)):(6+(i*3)+3)]
+			current_pos_mesh = obs[(12+(i*3)):(12+(i*3)+3)]
 			goal_pos_id_frite = self.goal[i]
 			d =  np.linalg.norm(current_pos_mesh - goal_pos_id_frite, axis=-1)
 			if (d > max_d):

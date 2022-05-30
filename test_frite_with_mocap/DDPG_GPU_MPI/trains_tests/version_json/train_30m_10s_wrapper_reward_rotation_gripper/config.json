@@ -99,6 +99,6 @@
 		}
 	},
 	"log": {
-		"name": "log_train.txt"
+		"name": "log_test.txt"
 	}
 }
