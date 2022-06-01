@@ -446,7 +446,7 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		pose_msg.pose.position.y = command[1]
 		pose_msg.pose.position.z = command[2]
 	
-		if (orientation == None):
+		if (an_orientation == None):
 			pose_msg.pose.orientation.x = self.init_cartesian_orientation[0]
 			pose_msg.pose.orientation.y = self.init_cartesian_orientation[1]
 			pose_msg.pose.orientation.z = self.init_cartesian_orientation[2]
@@ -674,7 +674,7 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		rospy.Subscriber('/PoseAllBodies', PoseArray, self.mocap_callback,
 						 queue_size=10)
 						 
-		rospy.Subscriber('/cartesian_impedance_example_controller/current_observation', Float64MultiArray, self.observation_callback,
+		rospy.Subscriber('/cartesian_impedance_example_controller/current_observation_orientation', Float64MultiArray, self.observation_callback,
 						 queue_size=10)
 						 
 		self.publisher_poses_meshes_in_arm_frame = rospy.Publisher('/VisualizationPoseArrayMarkersInArmFrame', MarkerArray, queue_size=10)
