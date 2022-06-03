@@ -27,6 +27,8 @@ class Database_Frite:
 		self.nb_y = json_decoder.config_data["database"]["generate"]["nb_y"]
 		self.nb_z = json_decoder.config_data["database"]["generate"]["nb_z"]
 		
+		self.reverse = json_decoder.config_data["database"]["generate"]["reverse"]
+		
 		self.time_action = json_decoder.config_data["env"]["time_set_action"]
 		
 		self.nb_lines = 0
@@ -90,7 +92,7 @@ class Database_Frite:
 			print("d_x={}, d_y={}, d_z={}".format(d_x,d_y,d_z))
 			print("step_x={}, step_y={}, step_z={}".format(self.step_x,self.step_y,self.step_z))
 			print("range_x={}, range_y={}, range_z={}".format(self.range_x,self.range_y,self.range_z))
-			print("delta_x={}, delta_y={}".format(self.delta_x,self.delta_y))
+			print("delta_x={}, delta_y={}, delta_z={}".format(self.delta_x,self.delta_y,self.delta_z))
 			print("**************************************")
 		
 	
@@ -113,6 +115,7 @@ class Database_Frite:
 		
 		self.delta_x = math.ceil((self.gripper_position[0]-self.goal_low[0])/self.step_x)
 		self.delta_y = math.ceil((self.gripper_position[1]-self.goal_low[1])/self.step_y)
+		self.delta_z = math.ceil((self.gripper_position[2]-self.goal_low[2])/self.step_z)
 		
 		print("delta_x={}, delta_y={}".format(self.delta_x,self.delta_y))
 
@@ -230,6 +233,13 @@ class Database_Frite:
 			#print("y-> {}".format(d_x_y_z))
 			self.env.set_action_cartesian(d_x_y_z)
 			time.sleep(self.time_action)
+		
+		if (self.reverse):
+			d_x_y_z= [0.0, 0.0, -self.step_z]
+			for y in range(self.delta_z):
+				#print("y-> {}".format(d_x_y_z))
+				self.env.set_action_cartesian(d_x_y_z)
+				time.sleep(self.time_action)
 
 
 	def generate(self):
@@ -261,7 +271,7 @@ class Database_Frite:
 			
 		print("->Close file !")
 		f.close()
-		f_gripper.close()
+		f_gripper.close()	
 			
 	def generate_classic(self):
 		self.init_spaces()
@@ -310,7 +320,15 @@ class Database_Frite:
   
 			# 1 shift z
 			d_x_y_z= [0.0, 0.0, 0.0]
-			d_x_y_z[2] = -self.step_z
+			if (self.reverse):
+				d_x_y_z[2] = self.step_z
+			else:
+				d_x_y_z[2] = -self.step_z
+				
+			self.env.set_action_cartesian(d_x_y_z)
+			time.sleep(self.time_action)
+			self.env.draw_gripper_position()
+			self.write_floats(f)
         
 			self.step_y*=-1
         
