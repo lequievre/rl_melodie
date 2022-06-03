@@ -12,14 +12,14 @@
 		"time_step": 0.003,
 		"time_step_sleep": 0.030,
 		"n_substeps": 20,
-		"time_set_action": 3.0,
+		"time_set_action": 10.0,
 		"do_reset_env": true,
 		"id_frite_to_follow": [ [31, 15], [13, 10], [18, 14], [28, 53] ],
 		"under_id_frite_to_follow": [ [63, 38], [58, 54], [42, 37], [23, 32] ],
 		"gym_spaces":
 		{
 			"spaces":[{"name": "extra_small","x_up": 0.025,"x_down": 0.05,"y_up": 0.15,"y_down": 0.15,"z_down": 0.1},{"name": "small","x_up": 0.05,"x_down": 0.1,"y_up": 0.25,"y_down": 0.25,"z_down": 0.25},{"name": "medium","x_up": 0.05,"x_down": 0.15,"y_up": 0.3,"y_down": 0.3,"z_down": 0.25},{"name": "large","x_up": 0.05,"x_down": 0.15,"y_up": 0.4,"y_down": 0.4,"z_down": 0.3}],
-			"goal": 3,
+			"goal": 2,
 			"pose": 3
 		}
 	},
@@ -88,10 +88,10 @@
 	"database": {
 		"name": "db.txt",
 		"generate": {
-			"reverse": false,
-			"nb_x": 8,
-			"nb_y": 22,
-			"nb_z": 10,
+			"reverse": true,
+			"nb_x": 5,
+			"nb_y": 20,
+			"nb_z": 5,
 			"nb_random_goal": 800,
 			"type_db": 0
 		},

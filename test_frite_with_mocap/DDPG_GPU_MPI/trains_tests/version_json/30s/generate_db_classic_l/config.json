@@ -12,7 +12,7 @@
 		"time_step": 0.003,
 		"time_step_sleep": 0.030,
 		"n_substeps": 20,
-		"time_set_action": 3.0,
+		"time_set_action": 30.0,
 		"do_reset_env": true,
 		"id_frite_to_follow": [ [31, 15], [13, 10], [18, 14], [28, 53] ],
 		"under_id_frite_to_follow": [ [63, 38], [58, 54], [42, 37], [23, 32] ],

@@ -88,6 +88,7 @@
 	"database": {
 		"name": "db.txt",
 		"generate": {
+			"reverse": false,
 			"nb_x": 5,
 			"nb_y": 20,
 			"nb_z": 5,
