@@ -327,6 +327,15 @@ def main():
 		
 		input("hit return !")
 			 
+	elif args.mode == 'load_database':
+		
+		env.draw_env_box()
+		
+		input("hit return to start load !")
+		db.load()
+		
+		input("hit return !")		 
+			 
 	elif args.mode == 'show_database':
 		state = env.reset(use_frite=True)
 		env.draw_env_box()
