@@ -260,6 +260,17 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 
 		from visualization_msgs.msg import MarkerArray, Marker
 
+
+	def set_E(self, value):
+		self.E = value
+		
+	def set_NU(self, value):
+		self.NU = value
+		
+	def set_time_step(self, value):
+		self.env_pybullet.time_step=value
+		self.dt = self.env_pybullet.time_step*self.env_pybullet.n_substeps*self.dt_factor
+		
 	def sample_random_action(self):
 		return np.array([self.action_x_space.sample(),self.action_y_space.sample(),self.action_z_space.sample()]).flatten()
 
@@ -838,6 +849,11 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		
 		return vmean_shifted
 	
+	
+	def draw_frite_parameters(self):
+		self.debug_gui.draw_text("E", a_text = "E=" + str(self.E) + ", NU=" + str(self.NU) + ", timeStep=" + str(self.env_pybullet.time_step), a_pos=[1,1,1])
+		
+		
 	def draw_id_to_follow(self):
 		for i in range(len(self.id_frite_to_follow)):
 			self.debug_gui.draw_cross("id_frite_"+str(i), a_pos = self.position_mesh_to_follow[i], a_color = [0, 0, 1])

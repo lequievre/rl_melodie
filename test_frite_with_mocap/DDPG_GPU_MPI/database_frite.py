@@ -214,6 +214,13 @@ class Database_Frite:
 		for k in range(len(self.env.position_mesh_to_follow)):
 			f.write("{:.3f} {:.3f} {:.3f} {:.3f} {:.3f} {:.3f}\n".format(self.env.mean_position_to_follow[k][0], self.env.mean_position_to_follow[k][1], self.env.mean_position_to_follow[k][2], self.env.position_mesh_to_follow[k][0],  self.env.position_mesh_to_follow[k][1], self.env.position_mesh_to_follow[k][2]))
 		f.flush()
+		
+		
+	def write_floats_with_gripper_pos(self, gripper_pos, f):
+		self.env.compute_mesh_pos_to_follow(draw_normal=False)
+		for k in range(len(self.env.position_mesh_to_follow)):
+			f.write("{:.3f} {:.3f} {:.3f} {:.3f} {:.3f} {:.3f} {:.3f} {:.3f} {:.3f}\n".format(self.env.mean_position_to_follow[k][0], self.env.mean_position_to_follow[k][1], self.env.mean_position_to_follow[k][2], self.env.position_mesh_to_follow[k][0],  self.env.position_mesh_to_follow[k][1], self.env.position_mesh_to_follow[k][2], gripper_pos[0], gripper_pos[1], gripper_pos[2]))
+		f.flush()
 
 
 	def write_gripper_floats(self, gripper_pos, f):
@@ -247,9 +254,54 @@ class Database_Frite:
 			self.generate_classic()
 		elif self.type_db_generate==1:
 			self.generate_random()
+		elif self.type_db_generate==2:
+			self.generate_random_from_frite_parameters()
 		else:
-			raise RuntimeError("=> Can generate classic (type_db=0) or random db (type_db=1) !!!")
+			raise RuntimeError("=> Can generate classic (type_db=0) or random db (type_db=1) or random db with frite parameters (type db=2)!!!")
 			
+			
+	def generate_random_from_frite_parameters(self):
+		print("->Open frite parameters file : ", self.path_generate + "frite_parameters.txt !")
+		f_frite_parameters = open(self.path_generate + "frite_parameters.txt")
+		print("->Open database file : ", self.path_generate + self.generate_name , " !")
+		f = open(self.path_generate + self.generate_name, "w+")
+		
+		for line_frite_parameters in f_frite_parameters.readlines():
+			line_frite_parameters_split = line_frite_parameters.split()
+			E = float(line_frite_parameters_split[0])
+			NU = float(line_frite_parameters_split[1])
+			time_step = float(line_frite_parameters_split[2])
+			
+			self.env.set_E(E)
+			self.env.set_NU(NU)
+			self.env.set_time_step(time_step)
+			print("**** CHANGE-> E={}, NU={}, time_step={} *****************".format(E,NU,time_step))
+			
+			
+			f.write("{:.3f} {:.3f} {:.3f}\n".format(E, NU, time_step))
+			f.flush()
+			
+			#input("hit return to init env !")
+			for i in range(self.db_nb_random_goal):
+				self.env.reset_env()
+				if self.env.gui:
+					self.env.draw_env_box()
+					
+				self.env.draw_frite_parameters()
+				
+				# get a random goal = numpy array [x,y,z]
+				a_random_goal = self.env.sample_goal_database()
+				print("-> {} : Go to GOAL : {} !".format(i,a_random_goal))
+				self.env.go_to_position_simulated(a_random_goal)
+				print("-> Goal OK !")
+				time.sleep(self.time_action)
+				print("->  Save value !")
+				self.write_floats_with_gripper_pos(a_random_goal, f)
+			
+		print("->Close file !")
+		f.close()
+		f_frite_parameters.close()
+
 	def generate_random(self):
 		print("->Open database file : ", self.path_generate + self.generate_name , " !")
 		f = open(self.path_generate + self.generate_name, "w+")
