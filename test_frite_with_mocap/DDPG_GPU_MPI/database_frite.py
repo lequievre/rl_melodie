@@ -96,6 +96,11 @@ class Database_Frite:
 			print("range_x={}, range_y={}, range_z={}".format(self.range_x,self.range_y,self.range_z))
 			print("delta_x={}, delta_y={}, delta_z={}".format(self.delta_x,self.delta_y,self.delta_z))
 			print("**************************************")
+		elif self.type_db_generate==2:
+			print("RANDOM DB FROM FRITE PARAMETERS !")
+			print("db_nb_random_goal = {}".format(self.db_nb_random_goal))
+			print("file frite parameters used = {}".format(self.path_generate + "frite_parameters.txt"))
+			print("time set action = {}".format(self.time_action))
 		
 	
 	def init_spaces(self):
