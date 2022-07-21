@@ -19,7 +19,7 @@ class Database_Frite:
 		self.path_generate = json_decoder.config_dir_name
 		self.db_nb_random_goal = json_decoder.config_data["database"]["generate"]["nb_random_goal"]
 		
-		# type of db , 0 = classic, 1 = random, 2 = mocap
+		# type of db , 0 = classic, 1 = random, 2 = random with frite parameters, 3 = mocap
 		self.type_db_generate = json_decoder.config_data["database"]["generate"]["type_db"]
 		self.type_db_load = json_decoder.config_data["database"]["load"]["type_db"]
 		
@@ -38,6 +38,8 @@ class Database_Frite:
 		self.env = None
 		self.data = None
 		self.dico_data = None
+		self.data_gripper = None
+		self.dico_data_gripper = None
 		self.nb_points = None
 		
 		print("Database_Frite -> nb_x={}, nb_y={}, nb_z={}".format(self.nb_x,self.nb_y,self.nb_z))
@@ -131,24 +133,24 @@ class Database_Frite:
 		self.range_z = self.nb_z + 1
 		
 		print("step_x={}, step_y={}, step_z={}".format(self.step_x,self.step_y,self.step_z))
-			
-		
-	def get_random_targets(self):
-		if self.type_db_load == 2:
-			if self.dico_data is not None:
-				index_frite_parameters = random.randint(len(list(self.dico_data))-1)
-				index_data = random.randint(self.nb_deformations-1)
-				print("get_random_targets -> index_frite_parameters={}, index_data={}".format(index_frite_parameters,index_data))
-				print("key random={}, data key random={}".format(list(self.dico_data)[index_frite_parameters],self.dico_data[list(self.dico_data)[index_frite_parameters]][index_data]))
-				return self.dico_data[list(self.dico_data)[index_frite_parameters]][index_data]
-			else:
-				return None
+	
+	
+	def get_random_targets_with_frite_parameters(self):
+		if self.dico_data is not None:
+			index_frite_parameters = random.randint(len(list(self.dico_data))-1)
+			index_data = random.randint(self.nb_deformations-1)
+			#print("get_random_targets -> index_frite_parameters={}, index_data={}".format(index_frite_parameters,index_data))
+			#print("key random={}, data key random={}".format(list(self.dico_data)[index_frite_parameters],self.dico_data[list(self.dico_data)[index_frite_parameters]][index_data]))
+			return (list(self.dico_data)[index_frite_parameters], self.dico_data[list(self.dico_data)[index_frite_parameters]][index_data])
 		else:
-			if self.data is not None:
-				index = random.randint(self.nb_deformations-1)
-				return self.data[index]
-			else:
-				return None
+			return None
+			
+	def get_random_targets(self):
+		if self.data is not None:
+			index = random.randint(self.nb_deformations-1)
+			return self.data[index]
+		else:
+			return None
 	
 	def load(self):
 		if (self.type_db_load==0 or self.type_db_load==1):
@@ -166,6 +168,7 @@ class Database_Frite:
 		f = open(self.path_load + self.load_name)
 		
 		self.dico_data = {}
+		self.dico_data_gripper = {}
 		self.nb_frite_parameters = 0
 		line = f.readline()
 		while line:
@@ -173,34 +176,40 @@ class Database_Frite:
 			E = line_split[0]
 			NU = line_split[1]
 			time_step = line_split[2]
+			factor_dt_factor = line_split[3]
 			self.nb_frite_parameters+=1
-			print("E={}, NU={}, TIMESTEP={}".format(E,NU,time_step))
+			print("E={}, NU={}, TIMESTEP={}, factor_dt_factor={}".format(E,NU,time_step,factor_dt_factor))
 			
 			line = f.readline()
 			self.nb_lines = 0
 			self.nb_deformations = 0
 			total_list = []
+			total_list_gripper = []
 
-			while len(line.split()) > 3:
+			while len(line.split()) > 4:
 				line_split = line.split()
 				self.nb_lines+=1
 				# 0 = X mean, 1 = Y mean, 2 = Z mean
-				total_list.append(float(line_split[3])) #x shifted
-				total_list.append(float(line_split[4])) #y shifted
-				total_list.append(float(line_split[5]))	#z shifted
+				total_list.append(float(line_split[3])) #3 = x shifted
+				total_list.append(float(line_split[4])) #4= y shifted
+				total_list.append(float(line_split[5]))	#5= z shifted
 				
-				total_list.append(float(line_split[6])) #gripper x
-				total_list.append(float(line_split[7])) #gripper y
-				total_list.append(float(line_split[8]))	#gripper z
+				total_list_gripper.append(float(line_split[6])) #6= gripper x
+				total_list_gripper.append(float(line_split[7])) #7= gripper y
+				total_list_gripper.append(float(line_split[8]))	#8= gripper z
 				
 				line = f.readline()
 				
 			self.nb_deformations = int(self.nb_lines/self.nb_points)
 			print("nb lines = {}, nb points = {}, nb_deformations = {}".format(self.nb_lines, self.nb_points,self.nb_deformations))
-			data = np.array(total_list).reshape(self.nb_deformations, self.nb_points, 6)
-			self.dico_data[(E,NU,time_step)] = data
+			data = np.array(total_list).reshape(self.nb_deformations, self.nb_points, 3)
+			data_gripper = np.array(total_list_gripper).reshape(self.nb_deformations, self.nb_points, 3)
+			
+			self.dico_data[(E,NU,time_step,factor_dt_factor)] = data
+			self.dico_data_gripper[(E,NU,time_step,factor_dt_factor)] = data_gripper
 				
 		print("dico data={}".format(self.dico_data))
+		print("dico_data_gripper={}".format(self.dico_data_gripper))
 		
 	def load_mocap(self):
 		print("=> LOAD MOCAP DATABASE Name = {}".format(self.path_load + self.load_name))
@@ -330,14 +339,16 @@ class Database_Frite:
 			E = float(line_frite_parameters_split[0])
 			NU = float(line_frite_parameters_split[1])
 			time_step = float(line_frite_parameters_split[2])
+			factor_dt_factor = float(line_frite_parameters_split[3])
 			
 			self.env.set_E(E)
 			self.env.set_NU(NU)
+			self.env.set_factor_dt_factor(factor_dt_factor)
 			self.env.set_time_step(time_step)
-			print("**** CHANGE-> E={}, NU={}, time_step={} *****************".format(E,NU,time_step))
+			print("**** CHANGE-> E={}, NU={}, time_step={}, factor_dt_factor={} *****************".format(E,NU,time_step,factor_dt_factor))
 			
 			
-			f.write("{:.5f} {:.5f} {:.5f}\n".format(E, NU, time_step))
+			f.write("{:.5f} {:.5f} {:.5f}\n".format(E, NU, time_step, factor_dt_factor))
 			f.flush()
 			
 			#input("hit return to init env !")

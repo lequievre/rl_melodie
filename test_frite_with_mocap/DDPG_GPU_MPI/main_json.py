@@ -142,6 +142,7 @@ def main():
 				
 			if (args.gui):
 			   env.draw_env_box()
+			   env.env.draw_frite_parameters()
 			   time.sleep(wait_time_sleep_after_draw_env_box)
 			   
 			current_distance_error = 0
@@ -228,6 +229,7 @@ def main():
 				
 			if (args.gui):
 			   env.draw_env_box()
+			   env.env.draw_frite_parameters()
 			   
 			noise.reset()
 			episode_reward = 0
@@ -326,6 +328,20 @@ def main():
 		db.generate()
 		
 		input("hit return !")
+		
+	elif args.mode == 'test_sample_goal':
+		for i in range(10):
+			input("hit return to reset a new goal[{}] !".format(i))	
+			
+			env.reset_env()
+			obs = env.reset()
+			print("reset obs = {}".format(obs))
+			
+			env.draw_frite_parameters()
+			
+			env.draw_env_box()
+		
+		input("hit return !")	
 			 
 	elif args.mode == 'load_database':
 		
