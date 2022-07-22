@@ -219,7 +219,7 @@ class Database_Frite:
   
 			# 1 shift z
 			d_x_y_z= [0.0, 0.0, 0.0]
-			d_x_y_z[2] = -self.step_z
+			d_x_y_z[2] += -self.step_z
         
 			self.step_y*=-1
         
