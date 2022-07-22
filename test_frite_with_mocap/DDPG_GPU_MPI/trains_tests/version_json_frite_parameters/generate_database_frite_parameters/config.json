@@ -7,6 +7,8 @@
 		"distance_threshold": 0.05,
 		"E": 2.5,
 		"NU": 0.3,
+		"add_frite_parameters_to_observation": false,
+		"fix_initial_gripper_orientation": true,
 		"dt_factor": 1.0,
 		"joint_motor_control_force": 100.0,
 		"time_step": 0.003,

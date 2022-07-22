@@ -54,6 +54,9 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		
 		self.E = self.json_decoder.config_data["env"]["E"]
 		self.NU = self.json_decoder.config_data["env"]["NU"]
+		self.add_frite_parameters_to_observation = self.json_decoder.config_data["env"]["add_frite_parameters_to_observation"]
+		self.fix_initial_gripper_orientation = self.json_decoder.config_data["env"] ["fix_initial_gripper_orientation"]
+		
 		self.dt_factor = self.json_decoder.config_data["env"]["dt_factor"]
 		self.joint_motor_control_force = self.json_decoder.config_data["env"]["joint_motor_control_force"]
 		self.time_set_action = self.json_decoder.config_data["env"]["time_set_action"]
@@ -122,6 +125,9 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		self.id_debug_marker_frite_list = None
 		self.id_save_button = None
 		
+		self.pos_of_mesh_in_obs = None
+		self.nb_obs_values = None
+		self.nb_action_values = None
 		
 		# Points (on the front side) from bottom to up
 		# [5, 2]
@@ -1273,20 +1279,59 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		low_z_down = panda_eff_state[0][2]-pose_z_down
 		low_z_up = panda_eff_state[0][2]
 		
-		
 		self.pos_space = spaces.Box(low=np.array([low_x_down, low_y_down ,low_z_down]), high=np.array([low_x_up, low_y_up ,low_z_up]))
 		
-		# action_space = cartesian world velocity (vx, vy, vz)  = 6 float
-		self.action_space = spaces.Box(-1., 1., shape=(6,), dtype=np.float32)
-		
+		self.nb_action_values = 6
 		
 		if self.database.type_db_load == 2:
-			# observation = 38 float -> see function _get_obs  (with frite parameters -> add E and NU to observation)
-			self.observation_space = spaces.Box(np.finfo(np.float32).min, np.finfo(np.float32).max, shape=(38,), dtype=np.float32)
-		else:
-			# observation = 36 float -> see function _get_obs
-			self.observation_space = spaces.Box(np.finfo(np.float32).min, np.finfo(np.float32).max, shape=(36,), dtype=np.float32)
+			
+			if self.fix_initial_gripper_orientation:
+				self.nb_action_values -= 3
+		
+		print("-> NB Action values = {}".format(self.nb_action_values))
+		
+		# action_space = cartesian world velocity (vx, vy, vz) + orientation gripper ((thetaX, thetaY, thetaZ) if necessary)
+		self.action_space = spaces.Box(-1., 1., shape=(self.nb_action_values,), dtype=np.float32)
+		
+		self.nb_obs_values = 0
+		
+		# add gripper link cartesian world position (x,y,z)
+		self.nb_obs_values += 3
+		
+		# add gripper link cartesian world velocity (vx, vy, vz)
+		self.nb_obs_values += 3
+		
+		# add gripper link cartesian world orientation (theta_x,theta_y,theta_z)
+		self.nb_obs_values += 3
 
+		# add gripper link cartesian world angular velocity (theta__dot_x,theta__dot_y,theta__dot_z)
+		self.nb_obs_values += 3
+		
+		# add current cartesian world position of id frite to follow ((x,y,z) x 4)
+		self.nb_obs_values += len(self.id_frite_to_follow) * 3
+		
+		# add goal cartesian world position of id frite to reach ((x,y,z) x 4)
+		self.nb_obs_values += len(self.id_frite_to_follow) * 3
+		
+		self.pos_of_mesh_in_obs = 12
+		
+		if self.database.type_db_load == 2:
+			# if type is frite parameters
+			
+			if self.fix_initial_gripper_orientation:
+				# remove gripper link world orientation and angular velocity
+				self.nb_obs_values -= 6
+				self.pos_of_mesh_in_obs = 6
+				
+			if self.add_frite_parameters_to_observation:
+				# add E and NU
+				self.nb_obs_values += 2
+			
+		print("-> NB Observation values = {}".format(self.nb_obs_values))
+		 	
+		# observation = X float -> see function _get_obs 
+		self.observation_space = spaces.Box(np.finfo(np.float32).min, np.finfo(np.float32).max, shape=(self.nb_obs_values,), dtype=np.float32)
+			
 	
 	def get_position_id_frite(self):
 		data = p.getMeshData(self.frite_id, -1, flags=p.MESH_DATA_SIMULATION_MESH)
@@ -1574,7 +1619,7 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		
 		
 	def set_action(self, action):
-		assert action.shape == (6,), 'action shape error'
+		assert action.shape == (self.nb_action_values,), 'action shape error'
 		
 		cur_state = p.getLinkState(self.panda_id, self.panda_end_eff_idx)
 		cur_pos = np.array(cur_state[0])
@@ -1585,9 +1630,17 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		new_pos = cur_pos + np.array(action[:3]) * self.max_vel * self.dt
 		new_pos = np.clip(new_pos, self.pos_space.low, self.pos_space.high)
 		
-		new_orien_euler = cur_orien_euler + np.array(action[3:]) * self.max_vel * self.dt
-		new_orien_quaternion = p.getQuaternionFromEuler(new_orien_euler)
-		
+		if self.database.type_db_load == 2:
+			# if type is frite parameters
+			if self.fix_initial_gripper_orientation:
+				new_orien_quaternion = cur_orien
+			else:
+				new_orien_euler = cur_orien_euler + np.array(action[3:]) * self.max_vel * self.dt
+				new_orien_quaternion = p.getQuaternionFromEuler(new_orien_euler)
+		else:
+			new_orien_euler = cur_orien_euler + np.array(action[3:]) * self.max_vel * self.dt
+			new_orien_quaternion = p.getQuaternionFromEuler(new_orien_euler)
+			
 		jointPoses = p.calculateInverseKinematics(self.panda_id, self.panda_end_eff_idx, new_pos, new_orien_quaternion)[0:7]
 		
 		for i in range(len(jointPoses)):
@@ -1650,10 +1703,17 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		#print("goal flat = {}, id pos flat = {}".format(self.goal.flatten(), id_frite_to_follow_pos))
 		
 		if self.database.type_db_load == 2:
-			# with frite parameters
-			obs = np.concatenate((
-						gripper_link_pos, gripper_link_orien_euler, gripper_link_vel, gripper_link_vel_orien, mesh_to_follow_pos, self.goal.flatten(), np.array([float(self.E), float(self.NU)])
-			))
+			
+			if self.fix_initial_gripper_orientation:
+				obs = np.concatenate((gripper_link_pos, gripper_link_vel, mesh_to_follow_pos, self.goal.flatten()))
+			else:
+				obs = np.concatenate((
+							gripper_link_pos, gripper_link_orien_euler, gripper_link_vel, gripper_link_vel_orien, mesh_to_follow_pos, self.goal.flatten())
+							)
+				
+			if self.add_frite_parameters_to_observation:
+				# with frite parameters
+				obs = np.concatenate(( obs, np.array([float(self.E), float(self.NU)]) ))
 			
 		else:
 			obs = np.concatenate((
@@ -1678,6 +1738,8 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		nb_mesh_to_follow = len(self.position_mesh_to_follow)
 		
 		max_d = 0
+		
+		initial_pos_of_mesh = 0
 		
 		for i in range(nb_mesh_to_follow):
 			current_pos_mesh = obs[(12+(i*3)):(12+(i*3)+3)]
@@ -1714,7 +1776,7 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		max_d = 0
 		
 		for i in range(nb_mesh_to_follow):
-			current_pos_mesh = obs[(12+(i*3)):(12+(i*3)+3)]
+			current_pos_mesh = obs[(self.pos_of_mesh_in_obs+(i*3)):(self.pos_of_mesh_in_obs+(i*3)+3)]
 			goal_pos_id_frite = self.goal[i]
 			d =  np.linalg.norm(current_pos_mesh - goal_pos_id_frite, axis=-1)
 			if (d > max_d):
