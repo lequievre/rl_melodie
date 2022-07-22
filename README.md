@@ -2,7 +2,7 @@
 <br>
 <br>We address the problem of controlling the deformation of a DLO using a robot arm that manipulates it. For simplicity, the robot grasps one end of the object, and the other end is fixed to the ground. The object is represented by a mesh and we describe its deformation by a set of selected mesh nodes. The objective is to control the arm so that the positions of the selected nodes are driven to prescribed values. The difficulty of this indirect control problem lies in the fact that the dynamical model of the system to be controlled is complex and uncertain. We propose a generalizable architecture to solve this problem based on DRL.
 
-
+see the final version at Mélodie Hani Daniel Zakaria github [here](https://github.com/MelodieDANIEL/robotic_control_of_DLO_using_DRL)
 
 ## How to install virtualenv on ubuntu 20.04
 
