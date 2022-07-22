@@ -10,11 +10,7 @@
 
 ## See the final version at Mélodie Hani Daniel Zakaria github [here](https://github.com/MelodieDANIEL/robotic_control_of_DLO_using_DRL)
 
-
-
-<br>
-## The version of that github is in under DEVELOPMENT !
-<br>
+## The version of that github is under DEVELOPMENT
 
 ## How to install virtualenv on ubuntu 20.04
 
