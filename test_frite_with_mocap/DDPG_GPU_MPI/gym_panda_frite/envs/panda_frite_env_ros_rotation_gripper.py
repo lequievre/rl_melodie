@@ -1794,6 +1794,7 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 			self.draw_goal()
 				
 		if self.database.type_db_load == 2:
+			print("reset env for a db type 2 !")
 			self.reset_env()
 			
 		return self.get_obs()
