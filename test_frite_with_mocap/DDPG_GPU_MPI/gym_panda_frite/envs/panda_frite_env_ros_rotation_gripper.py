@@ -1792,7 +1792,10 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		if self.gui:
 			# draw goal
 			self.draw_goal()
-		
+				
+		if self.database.type_db_load == 2:
+			self.reset_env()
+			
 		return self.get_obs()
 		
 	def render(self):
