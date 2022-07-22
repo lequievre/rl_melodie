@@ -141,9 +141,9 @@ def main():
 			state = env.reset()
 				
 			if (args.gui):
-			   env.draw_env_box()
-			   env.env.draw_frite_parameters()
-			   time.sleep(wait_time_sleep_after_draw_env_box)
+				env.draw_env_box()
+				env.draw_frite_parameters()
+				time.sleep(wait_time_sleep_after_draw_env_box)
 			   
 			current_distance_error = 0
 			
@@ -228,8 +228,8 @@ def main():
 			state = env.reset()
 				
 			if (args.gui):
-			   env.draw_env_box()
-			   env.env.draw_frite_parameters()
+				env.draw_env_box()
+				env.draw_frite_parameters()
 			   
 			noise.reset()
 			episode_reward = 0
