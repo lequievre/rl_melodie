@@ -292,7 +292,7 @@ def main():
 			if 65309 in keys:
 			   break 
 	elif args.mode == 'debug_articular':	
-		state = env.reset(use_frite=True)
+		state = env.reset()
 		env.draw_env_box()
 		env.show_sliders()
 		while True:

@@ -348,7 +348,7 @@ class Database_Frite:
 			print("**** CHANGE-> E={}, NU={}, time_step={}, factor_dt_factor={} *****************".format(E,NU,time_step,factor_dt_factor))
 			
 			
-			f.write("{:.5f} {:.5f} {:.5f}\n".format(E, NU, time_step, factor_dt_factor))
+			f.write("{:.5f} {:.5f} {:.5f} {:.5f}\n".format(E, NU, time_step, factor_dt_factor))
 			f.flush()
 			
 			#input("hit return to init env !")
