@@ -8,12 +8,12 @@
 <br><a id="note2" href="#note2ref"><sup>2</sup></a>Instituto de Investigación en Ingeniería de Aragón, Universidad de Zaragoza, Zaragoza, Spain.
 <br><a id="note3" href="#note3ref"><sup>3</sup></a>Centro Singular de Investigación en Tecnoloxías Intelixentes (CiTIUS),  Universidade de Santiago de Compostela, Santiago de Compostela, Spain.
 
-##See the final version at Mélodie Hani Daniel Zakaria github [here](https://github.com/MelodieDANIEL/robotic_control_of_DLO_using_DRL)
+## See the final version at Mélodie Hani Daniel Zakaria github [here](https://github.com/MelodieDANIEL/robotic_control_of_DLO_using_DRL)
 
 
 
 <br>
-##The version of that github is in under DEVELOPMENT !
+## The version of that github is in under DEVELOPMENT !
 <br>
 
 ## How to install virtualenv on ubuntu 20.04
