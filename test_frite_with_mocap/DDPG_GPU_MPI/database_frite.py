@@ -173,7 +173,7 @@ class Database_Frite:
 		line = f.readline()
 		while line:
 			line_split = line.split()
-			print("line_split = {}".format(line_split))
+			#print("line_split = {}".format(line_split))
 			E = line_split[0]
 			NU = line_split[1]
 			time_step = line_split[2]
@@ -361,7 +361,7 @@ class Database_Frite:
 			
 			
 			print("**** CHANGE-> E={}, NU={}, time_step={}, factor_dt_factor={} *****************".format(E,NU,time_step,factor_dt_factor))
-			
+			print("**** Initial gripper orientation x_rot={}, y_rot={}, z_rot={}".format(x_rot, y_rot, z_rot))
 			
 			f.write("{:.5f} {:.5f} {:.5f} {:.5f}\n".format(E, NU, time_step, factor_dt_factor))
 			f.flush()
