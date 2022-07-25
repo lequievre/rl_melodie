@@ -56,6 +56,7 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		self.NU = self.json_decoder.config_data["env"]["NU"]
 		self.add_frite_parameters_to_observation = self.json_decoder.config_data["env"]["add_frite_parameters_to_observation"]
 		self.fix_initial_gripper_orientation = self.json_decoder.config_data["env"] ["fix_initial_gripper_orientation"]
+		self.initial_gripper_orientation = None
 		
 		self.dt_factor = self.json_decoder.config_data["env"]["dt_factor"]
 		self.joint_motor_control_force = self.json_decoder.config_data["env"]["joint_motor_control_force"]
@@ -281,6 +282,11 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 	def set_time_step(self, value):
 		self.env_pybullet.time_step=float(value)
 		self.dt = self.env_pybullet.time_step*self.env_pybullet.n_substeps*self.dt_factor*self.factor_dt_factor
+	
+	
+	def set_initial_gripper_orientation(self, x_rot, y_rot, z_rot):
+		self.initial_gripper_orientation = [float(x_rot), float(y_rot), float(z_rot)]
+	
 		
 	def sample_random_action(self):
 		return np.array([self.action_x_space.sample(),self.action_y_space.sample(),self.action_z_space.sample()]).flatten()
@@ -1026,12 +1032,18 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		NU = values_frite_parameters[1]
 		time_step = values_frite_parameters[2]
 		factor_dt_factor = values_frite_parameters[3]
+		x_rot = values_frite_parameters[4]
+		y_rot = values_frite_parameters[5]
+		z_rot = values_frite_parameters[6]
+		
+		
 		self.set_E(E)
 		self.set_NU(NU)
 		self.set_factor_dt_factor(factor_dt_factor)
 		self.set_time_step(time_step)
+		self.set_initial_gripper_orientation(x_rot, y_rot, z_rot)
 		
-	
+		
 	def sample_goal(self):
 		if self.database.type_db_load == 2:
 			# db random with frite parameters
@@ -1283,10 +1295,8 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		
 		self.nb_action_values = 6
 		
-		if self.database.type_db_load == 2:
-			
-			if self.fix_initial_gripper_orientation:
-				self.nb_action_values -= 3
+		if self.database.type_db_load == 2 and self.fix_initial_gripper_orientation:
+			self.nb_action_values -= 3
 		
 		print("-> NB Action values = {}".format(self.nb_action_values))
 		
@@ -1394,7 +1404,25 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		
 		return (a_lambda,a_mu)
 		
+	
+	
+	def set_panda_to_initial_gripper_orientation(self):
 		
+		cur_state = p.getLinkState(self.panda_id, self.panda_end_eff_idx)
+		cur_pos = np.array(cur_state[0])
+		cur_orien = np.array(cur_state[1])
+		
+		cur_orien_euler = p.getEulerFromQuaternion(cur_orien)
+		if self.initial_gripper_orientation is not None:
+			cur_orien_euler = (float(self.initial_gripper_orientation[0]), float(self.initial_gripper_orientation[1]), float(self.initial_gripper_orientation[2]))
+		
+		new_orien_quaternion = p.getQuaternionFromEuler(cur_orien_euler)
+			
+		jointPoses = p.calculateInverseKinematics(self.panda_id, self.panda_end_eff_idx, cur_pos, new_orien_quaternion)[0:7]
+		
+		for i in range(len(jointPoses)):
+			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=self.joint_motor_control_force * 240.)
+			
 		
 	def load_frite(self):
 		gripper_pos = p.getLinkState(self.panda_id, self.panda_end_eff_idx)[0]
@@ -1835,6 +1863,10 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 			#p.stepSimulation()
 	
 	
+		if self.database.type_db_load == 2 and self.fix_initial_gripper_orientation:
+				self.set_panda_to_initial_gripper_orientation()
+			
+	
 	def reset_ros(self):
 		
 		
@@ -1850,15 +1882,15 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		# sample a new goal
 		self.goal = self.sample_goal()
 		#p.stepSimulation()
+				
+		if self.database.type_db_load == 2:
+			print("reset env for a db type 2 !")
+			self.reset_env()
 		
 		if self.gui:
 			# draw goal
 			self.draw_goal()
 				
-		if self.database.type_db_load == 2:
-			print("reset env for a db type 2 !")
-			self.reset_env()
-			
 		return self.get_obs()
 		
 	def render(self):

@@ -173,12 +173,19 @@ class Database_Frite:
 		line = f.readline()
 		while line:
 			line_split = line.split()
+			print("line_split = {}".format(line_split))
 			E = line_split[0]
 			NU = line_split[1]
 			time_step = line_split[2]
 			factor_dt_factor = line_split[3]
+			
+			x_rot_gripper = line_split[4]
+			y_rot_gripper = line_split[5]
+			z_rot_gripper = line_split[6]
+			
 			self.nb_frite_parameters+=1
 			print("E={}, NU={}, TIMESTEP={}, factor_dt_factor={}".format(E,NU,time_step,factor_dt_factor))
+			print("Gripper rot x={}, y={}, z={}".format(x_rot_gripper,y_rot_gripper,z_rot_gripper))
 			
 			line = f.readline()
 			self.nb_lines = 0
@@ -186,7 +193,7 @@ class Database_Frite:
 			total_list = []
 			total_list_gripper = []
 
-			while len(line.split()) > 4:
+			while len(line.split()) > 7:
 				line_split = line.split()
 				self.nb_lines+=1
 				# 0 = X mean, 1 = Y mean, 2 = Z mean
@@ -205,8 +212,8 @@ class Database_Frite:
 			data = np.array(total_list).reshape(self.nb_deformations, self.nb_points, 3)
 			data_gripper = np.array(total_list_gripper).reshape(self.nb_deformations, self.nb_points, 3)
 			
-			self.dico_data[(E,NU,time_step,factor_dt_factor)] = data
-			self.dico_data_gripper[(E,NU,time_step,factor_dt_factor)] = data_gripper
+			self.dico_data[(E,NU,time_step,factor_dt_factor,x_rot_gripper,y_rot_gripper,z_rot_gripper)] = data
+			self.dico_data_gripper[(E,NU,time_step,factor_dt_factor,x_rot_gripper,y_rot_gripper,z_rot_gripper)] = data_gripper
 				
 		print("dico data={}".format(self.dico_data))
 		print("dico_data_gripper={}".format(self.dico_data_gripper))
@@ -341,10 +348,18 @@ class Database_Frite:
 			time_step = float(line_frite_parameters_split[2])
 			factor_dt_factor = float(line_frite_parameters_split[3])
 			
+			x_rot = float(line_frite_parameters_split[4])
+			y_rot = float(line_frite_parameters_split[5])
+			z_rot = float(line_frite_parameters_split[6])
+			
+			
 			self.env.set_E(E)
 			self.env.set_NU(NU)
 			self.env.set_factor_dt_factor(factor_dt_factor)
 			self.env.set_time_step(time_step)
+			self.env.set_initial_gripper_orientation(x_rot,y_rot,z_rot)
+			
+			
 			print("**** CHANGE-> E={}, NU={}, time_step={}, factor_dt_factor={} *****************".format(E,NU,time_step,factor_dt_factor))
 			
 			
@@ -356,7 +371,7 @@ class Database_Frite:
 				self.env.reset_env()
 				if self.env.gui:
 					self.env.draw_env_box()
-					
+				
 				self.env.draw_frite_parameters()
 				
 				# get a random goal = numpy array [x,y,z]
