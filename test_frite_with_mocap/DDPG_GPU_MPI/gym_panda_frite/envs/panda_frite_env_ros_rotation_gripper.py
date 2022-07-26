@@ -1414,7 +1414,7 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		
 		cur_orien_euler = p.getEulerFromQuaternion(cur_orien)
 		if self.initial_gripper_orientation is not None:
-			cur_orien_euler = (float(self.initial_gripper_orientation[0]), float(self.initial_gripper_orientation[1]), float(self.initial_gripper_orientation[2]))
+			cur_orien_euler = (cur_orien_euler[0] + float(self.initial_gripper_orientation[0]), cur_orien_euler[1] + float(self.initial_gripper_orientation[1]), cur_orien_euler[2] + float(self.initial_gripper_orientation[2]))
 		
 		new_orien_quaternion = p.getQuaternionFromEuler(cur_orien_euler)
 			
