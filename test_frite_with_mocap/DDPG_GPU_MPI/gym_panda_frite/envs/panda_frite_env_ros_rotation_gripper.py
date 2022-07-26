@@ -868,7 +868,10 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 	
 	
 	def draw_frite_parameters(self):
-		self.debug_gui.draw_text("E", a_text = "E=" + str(self.E) + ", NU=" + str(self.NU) + ", timeStep=" + str(self.env_pybullet.time_step) + ", factor_dt_factor=" + str(self.factor_dt_factor), a_pos=[1,1,1])
+		str_to_print = "E=" + str(self.E) + ", NU=" + str(self.NU) + ", timeStep=" + str(self.env_pybullet.time_step) + ", factor_dt_factor=" + str(self.factor_dt_factor)
+		if self.database.type_db_load == 2 and self.fix_initial_gripper_orientation:
+			str_to_print += ", orien=" + str(self.initial_gripper_orientation)
+		self.debug_gui.draw_text("frite_parameters", a_text=str_to_print, a_pos=[1,1,1], a_size=1.0)
 		
 		
 	def draw_id_to_follow(self):
