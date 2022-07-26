@@ -363,7 +363,7 @@ class Database_Frite:
 			print("**** CHANGE-> E={}, NU={}, time_step={}, factor_dt_factor={} *****************".format(E,NU,time_step,factor_dt_factor))
 			print("**** Initial gripper orientation x_rot={}, y_rot={}, z_rot={}".format(x_rot, y_rot, z_rot))
 			
-			f.write("{:.5f} {:.5f} {:.5f} {:.5f}\n".format(E, NU, time_step, factor_dt_factor))
+			f.write("{:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f}\n".format(E, NU, time_step, factor_dt_factor, x_rot, y_rot, z_rot))
 			f.flush()
 			
 			#input("hit return to init env !")
