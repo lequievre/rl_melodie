@@ -272,7 +272,7 @@ def main():
 		
 		
 	elif args.mode == 'debug_cartesian':	
-		state = env.reset(use_frite=True)
+		state = env.reset()
 		env.draw_env_box()
 		env.show_cartesian_sliders()
 		env.draw_all_ids_mesh_frite()

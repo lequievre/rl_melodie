@@ -1416,15 +1416,20 @@ class PandaFriteEnvROSRotationGripper(gym.Env):
 		cur_orien = np.array(cur_state[1])
 		
 		cur_orien_euler = p.getEulerFromQuaternion(cur_orien)
+		
 		if self.initial_gripper_orientation is not None:
-			cur_orien_euler = (cur_orien_euler[0] + float(self.initial_gripper_orientation[0]), cur_orien_euler[1] + float(self.initial_gripper_orientation[1]), cur_orien_euler[2] + float(self.initial_gripper_orientation[2]))
-		
-		new_orien_quaternion = p.getQuaternionFromEuler(cur_orien_euler)
 			
-		jointPoses = p.calculateInverseKinematics(self.panda_id, self.panda_end_eff_idx, cur_pos, new_orien_quaternion)[0:7]
+			increment_x = float(self.initial_gripper_orientation[0]) / 10000.0
+			increment_y = float(self.initial_gripper_orientation[1]) / 10000.0
+			increment_z = float(self.initial_gripper_orientation[2]) / 10000.0
+			
+			for i in range(10000):
+				cur_orien_euler = (cur_orien_euler[0] + increment_x, cur_orien_euler[1] + increment_y, cur_orien_euler[2] + increment_z)
+				new_orien_quaternion = p.getQuaternionFromEuler(cur_orien_euler)
+				jointPoses = p.calculateInverseKinematics(self.panda_id, self.panda_end_eff_idx, cur_pos, new_orien_quaternion)[0:7]
 		
-		for i in range(len(jointPoses)):
-			p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=self.joint_motor_control_force * 240.)
+				for i in range(len(jointPoses)):
+					p.setJointMotorControl2(self.panda_id, i, p.POSITION_CONTROL, jointPoses[i],force=self.joint_motor_control_force * 240.)
 			
 		
 	def load_frite(self):
