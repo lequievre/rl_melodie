@@ -141,8 +141,9 @@ def main():
 			state = env.reset()
 				
 			if (args.gui):
-			   env.draw_env_box()
-			   time.sleep(wait_time_sleep_after_draw_env_box)
+				env.draw_env_box()
+				env.draw_frite_parameters()
+				time.sleep(wait_time_sleep_after_draw_env_box)
 			   
 			current_distance_error = 0
 			
@@ -227,7 +228,8 @@ def main():
 			state = env.reset()
 				
 			if (args.gui):
-			   env.draw_env_box()
+				env.draw_env_box()
+				env.draw_frite_parameters()
 			   
 			noise.reset()
 			episode_reward = 0
@@ -270,7 +272,7 @@ def main():
 		
 		
 	elif args.mode == 'debug_cartesian':	
-		state = env.reset(use_frite=True)
+		state = env.reset()
 		env.draw_env_box()
 		env.show_cartesian_sliders()
 		env.draw_all_ids_mesh_frite()
@@ -290,7 +292,7 @@ def main():
 			if 65309 in keys:
 			   break 
 	elif args.mode == 'debug_articular':	
-		state = env.reset(use_frite=True)
+		state = env.reset()
 		env.draw_env_box()
 		env.show_sliders()
 		while True:
@@ -326,6 +328,29 @@ def main():
 		db.generate()
 		
 		input("hit return !")
+		
+	elif args.mode == 'test_sample_goal':
+		for i in range(10):
+			input("hit return to reset a new goal[{}] !".format(i))	
+			
+			env.reset_env()
+			obs = env.reset()
+			print("reset obs = {}".format(obs))
+			
+			env.draw_frite_parameters()
+			
+			env.draw_env_box()
+		
+		input("hit return !")	
+			 
+	elif args.mode == 'load_database':
+		
+		env.draw_env_box()
+		
+		input("hit return to start load !")
+		db.load()
+		
+		input("hit return !")		 
 			 
 	elif args.mode == 'show_database':
 		state = env.reset(use_frite=True)

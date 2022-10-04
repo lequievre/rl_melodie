@@ -11,7 +11,7 @@ class Debug_Gui:
 	
 	def draw_text(self, a_name, a_text = "", a_pos = [0,0,0], a_size = 1.5, a_color = [1, 0, 0]):
 		if ( str(a_name)+"_txt" in self.dic_id.keys() ):
-			p.addUserDebugText(a_text, a_pos,textColorRGB=a_color,textSize=a_size,replaceItemUniqueId  = self.dic_id[str(name)+"_txt"])
+			p.addUserDebugText(a_text, a_pos,textColorRGB=a_color,textSize=a_size,replaceItemUniqueId  = self.dic_id[str(a_name)+"_txt"])
 		else:
 			self.dic_id[str(a_name)+"_txt"] = p.addUserDebugText(a_text, a_pos,textColorRGB=a_color,textSize=a_size)
 		#p.stepSimulation()

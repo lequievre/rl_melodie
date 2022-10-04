@@ -19,7 +19,7 @@ class Database_Frite:
 		self.path_generate = json_decoder.config_dir_name
 		self.db_nb_random_goal = json_decoder.config_data["database"]["generate"]["nb_random_goal"]
 		
-		# type of db , 0 = classic, 1 = random, 2 = mocap
+		# type of db , 0 = classic, 1 = random, 2 = random with frite parameters, 3 = mocap
 		self.type_db_generate = json_decoder.config_data["database"]["generate"]["type_db"]
 		self.type_db_load = json_decoder.config_data["database"]["load"]["type_db"]
 		
@@ -33,9 +33,13 @@ class Database_Frite:
 		
 		self.nb_lines = 0
 		self.nb_deformations = 0
+		self.nb_frite_parameters = 0
 		
 		self.env = None
 		self.data = None
+		self.dico_data = None
+		self.data_gripper = None
+		self.dico_data_gripper = None
 		self.nb_points = None
 		
 		print("Database_Frite -> nb_x={}, nb_y={}, nb_z={}".format(self.nb_x,self.nb_y,self.nb_z))
@@ -94,6 +98,11 @@ class Database_Frite:
 			print("range_x={}, range_y={}, range_z={}".format(self.range_x,self.range_y,self.range_z))
 			print("delta_x={}, delta_y={}, delta_z={}".format(self.delta_x,self.delta_y,self.delta_z))
 			print("**************************************")
+		elif self.type_db_generate==2:
+			print("RANDOM DB FROM FRITE PARAMETERS !")
+			print("db_nb_random_goal = {}".format(self.db_nb_random_goal))
+			print("file frite parameters used = {}".format(self.path_generate + "frite_parameters.txt"))
+			print("time set action = {}".format(self.time_action))
 		
 	
 	def init_spaces(self):
@@ -124,12 +133,21 @@ class Database_Frite:
 		self.range_z = self.nb_z + 1
 		
 		print("step_x={}, step_y={}, step_z={}".format(self.step_x,self.step_y,self.step_z))
+	
+	
+	def get_random_targets_with_frite_parameters(self):
+		if self.dico_data is not None:
+			index_frite_parameters = random.randint(len(list(self.dico_data))-1)
+			index_data = random.randint(self.nb_deformations-1)
+			#print("get_random_targets -> index_frite_parameters={}, index_data={}".format(index_frite_parameters,index_data))
+			#print("key random={}, data key random={}".format(list(self.dico_data)[index_frite_parameters],self.dico_data[list(self.dico_data)[index_frite_parameters]][index_data]))
+			return (list(self.dico_data)[index_frite_parameters], self.dico_data[list(self.dico_data)[index_frite_parameters]][index_data])
+		else:
+			return None
 			
-		
 	def get_random_targets(self):
 		if self.data is not None:
 			index = random.randint(self.nb_deformations-1)
-			
 			return self.data[index]
 		else:
 			return None
@@ -138,11 +156,68 @@ class Database_Frite:
 		if (self.type_db_load==0 or self.type_db_load==1):
 			self.load_classic_random()
 		elif self.type_db_load==2:
+			self.load_random_from_frite_parameters()
+		elif self.type_db_load==3:
 			self.load_mocap()
 		else:
 			raise RuntimeError("=> Can load classic (type_db=0) or random db (type_db=1) or mocap db (type_db=2) !!!")
 	
 	
+	def load_random_from_frite_parameters(self):
+		print("=> LOAD DATABASE Name = {}".format(self.path_load + self.load_name))
+		f = open(self.path_load + self.load_name)
+		
+		self.dico_data = {}
+		self.dico_data_gripper = {}
+		self.nb_frite_parameters = 0
+		line = f.readline()
+		while line:
+			line_split = line.split()
+			#print("line_split = {}".format(line_split))
+			E = line_split[0]
+			NU = line_split[1]
+			time_step = line_split[2]
+			factor_dt_factor = line_split[3]
+			
+			x_rot_gripper = line_split[4]
+			y_rot_gripper = line_split[5]
+			z_rot_gripper = line_split[6]
+			
+			self.nb_frite_parameters+=1
+			print("E={}, NU={}, TIMESTEP={}, factor_dt_factor={}".format(E,NU,time_step,factor_dt_factor))
+			print("Gripper rot x={}, y={}, z={}".format(x_rot_gripper,y_rot_gripper,z_rot_gripper))
+			
+			line = f.readline()
+			self.nb_lines = 0
+			self.nb_deformations = 0
+			total_list = []
+			total_list_gripper = []
+
+			while len(line.split()) > 7:
+				line_split = line.split()
+				self.nb_lines+=1
+				# 0 = X mean, 1 = Y mean, 2 = Z mean
+				total_list.append(float(line_split[3])) #3 = x shifted
+				total_list.append(float(line_split[4])) #4= y shifted
+				total_list.append(float(line_split[5]))	#5= z shifted
+				
+				total_list_gripper.append(float(line_split[6])) #6= gripper x
+				total_list_gripper.append(float(line_split[7])) #7= gripper y
+				total_list_gripper.append(float(line_split[8]))	#8= gripper z
+				
+				line = f.readline()
+				
+			self.nb_deformations = int(self.nb_lines/self.nb_points)
+			print("nb lines = {}, nb points = {}, nb_deformations = {}".format(self.nb_lines, self.nb_points,self.nb_deformations))
+			data = np.array(total_list).reshape(self.nb_deformations, self.nb_points, 3)
+			data_gripper = np.array(total_list_gripper).reshape(self.nb_deformations, self.nb_points, 3)
+			
+			self.dico_data[(E,NU,time_step,factor_dt_factor,x_rot_gripper,y_rot_gripper,z_rot_gripper)] = data
+			self.dico_data_gripper[(E,NU,time_step,factor_dt_factor,x_rot_gripper,y_rot_gripper,z_rot_gripper)] = data_gripper
+				
+		print("dico data={}".format(self.dico_data))
+		print("dico_data_gripper={}".format(self.dico_data_gripper))
+		
 	def load_mocap(self):
 		print("=> LOAD MOCAP DATABASE Name = {}".format(self.path_load + self.load_name))
 		f = open(self.path_load + self.load_name)
@@ -212,12 +287,19 @@ class Database_Frite:
 	def write_floats(self, f):
 		self.env.compute_mesh_pos_to_follow(draw_normal=False)
 		for k in range(len(self.env.position_mesh_to_follow)):
-			f.write("{:.3f} {:.3f} {:.3f} {:.3f} {:.3f} {:.3f}\n".format(self.env.mean_position_to_follow[k][0], self.env.mean_position_to_follow[k][1], self.env.mean_position_to_follow[k][2], self.env.position_mesh_to_follow[k][0],  self.env.position_mesh_to_follow[k][1], self.env.position_mesh_to_follow[k][2]))
+			f.write("{:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f}\n".format(self.env.mean_position_to_follow[k][0], self.env.mean_position_to_follow[k][1], self.env.mean_position_to_follow[k][2], self.env.position_mesh_to_follow[k][0],  self.env.position_mesh_to_follow[k][1], self.env.position_mesh_to_follow[k][2]))
+		f.flush()
+		
+		
+	def write_floats_with_gripper_pos(self, gripper_pos, f):
+		self.env.compute_mesh_pos_to_follow(draw_normal=False)
+		for k in range(len(self.env.position_mesh_to_follow)):
+			f.write("{:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f}\n".format(self.env.mean_position_to_follow[k][0], self.env.mean_position_to_follow[k][1], self.env.mean_position_to_follow[k][2], self.env.position_mesh_to_follow[k][0],  self.env.position_mesh_to_follow[k][1], self.env.position_mesh_to_follow[k][2], gripper_pos[0], gripper_pos[1], gripper_pos[2]))
 		f.flush()
 
 
 	def write_gripper_floats(self, gripper_pos, f):
-		f.write("{:.3f} {:.3f} {:.3f}\n".format(gripper_pos[0], gripper_pos[1], gripper_pos[2]))
+		f.write("{:.5f} {:.5f} {:.5f}\n".format(gripper_pos[0], gripper_pos[1], gripper_pos[2]))
 		f.flush()
 		
 	def go_to_corner(self):
@@ -247,9 +329,64 @@ class Database_Frite:
 			self.generate_classic()
 		elif self.type_db_generate==1:
 			self.generate_random()
+		elif self.type_db_generate==2:
+			self.generate_random_from_frite_parameters()
 		else:
-			raise RuntimeError("=> Can generate classic (type_db=0) or random db (type_db=1) !!!")
+			raise RuntimeError("=> Can generate classic (type_db=0) or random db (type_db=1) or random db with frite parameters (type db=2)!!!")
 			
+			
+	def generate_random_from_frite_parameters(self):
+		print("->Open frite parameters file : ", self.path_generate + "frite_parameters.txt !")
+		f_frite_parameters = open(self.path_generate + "frite_parameters.txt")
+		print("->Open database file : ", self.path_generate + self.generate_name , " !")
+		f = open(self.path_generate + self.generate_name, "w+")
+		
+		for line_frite_parameters in f_frite_parameters.readlines():
+			line_frite_parameters_split = line_frite_parameters.split()
+			E = float(line_frite_parameters_split[0])
+			NU = float(line_frite_parameters_split[1])
+			time_step = float(line_frite_parameters_split[2])
+			factor_dt_factor = float(line_frite_parameters_split[3])
+			
+			x_rot = float(line_frite_parameters_split[4])
+			y_rot = float(line_frite_parameters_split[5])
+			z_rot = float(line_frite_parameters_split[6])
+			
+			
+			self.env.set_E(E)
+			self.env.set_NU(NU)
+			self.env.set_factor_dt_factor(factor_dt_factor)
+			self.env.set_time_step(time_step)
+			self.env.set_initial_gripper_orientation(x_rot,y_rot,z_rot)
+			
+			
+			print("**** CHANGE-> E={}, NU={}, time_step={}, factor_dt_factor={} *****************".format(E,NU,time_step,factor_dt_factor))
+			print("**** Initial gripper orientation x_rot={}, y_rot={}, z_rot={}".format(x_rot, y_rot, z_rot))
+			
+			f.write("{:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f}\n".format(E, NU, time_step, factor_dt_factor, x_rot, y_rot, z_rot))
+			f.flush()
+			
+			#input("hit return to init env !")
+			for i in range(self.db_nb_random_goal):
+				self.env.reset_env()
+				if self.env.gui:
+					self.env.draw_env_box()
+				
+				self.env.draw_frite_parameters()
+				
+				# get a random goal = numpy array [x,y,z]
+				a_random_goal = self.env.sample_goal_database()
+				print("-> {} : Go to GOAL : {} !".format(i,a_random_goal))
+				self.env.go_to_position_simulated(a_random_goal)
+				print("-> Goal OK !")
+				time.sleep(self.time_action)
+				print("->  Save value !")
+				self.write_floats_with_gripper_pos(a_random_goal, f)
+			
+		print("->Close file !")
+		f.close()
+		f_frite_parameters.close()
+
 	def generate_random(self):
 		print("->Open database file : ", self.path_generate + self.generate_name , " !")
 		f = open(self.path_generate + self.generate_name, "w+")
